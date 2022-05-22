@@ -1,0 +1,39 @@
+// media queries
+=xl
+    @media only screen and (max-width: "1536px")
+        @content
+=lg
+    @media only screen and (max-width: "1200px")
+        @content
+=md
+    @media only screen and (max-width: "900px")
+        @content 
+=sm
+    @media only screen and (max-width: "600px")
+        @content
+=xs
+    @media only screen and (max-width: "425px")
+        @content
+
+
+// media query width
+=r($width)
+    @media only screen and (max-width: $width+ "px")
+        @content
+
+=rmin($width)
+    @media only screen and (min-width: $width+ "px")
+        @content
+
+// theme
+=dark
+    @at-root :global(.dark-mode) &
+        @content
+
+=dark-body
+    @at-root .dark-mode
+        @content
+
+=dark-common
+    @at-root .dark-mode &
+        @content
