@@ -50,17 +50,14 @@ export function useEagerConnect() {
 
 export function useInactiveListener(suppress: boolean = false) {
   const { active, error, activate } = useWeb3React();
-  console.log('active', active, error);
   // eslint-disable-next-line consistent-return
   useEffect((): any => {
     const { ethereum } = window;
     if (ethereum && ethereum.on && !active && !error && !suppress) {
       const handleConnect = () => {
-        console.log("Handling 'connect' event");
         activate(injected);
       };
       const handleChainChanged = (chainId: string | number) => {
-        console.log("Handling 'chainChanged' event with payload", chainId);
         activate(injected);
       };
       const handleAccountsChanged = (accounts: string[]) => {
@@ -69,7 +66,6 @@ export function useInactiveListener(suppress: boolean = false) {
         }
       };
       const handleNetworkChanged = (networkId: string | number) => {
-        console.log("Handling 'networkChanged' event with payload", networkId);
         activate(injected);
       };
 

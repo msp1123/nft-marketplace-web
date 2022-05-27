@@ -15,6 +15,6 @@ export async function GetAllNfts() {
             throw new Error(message.error);
         }
     } catch (e) {
-        console.log("Error::fetch::Nfts", e);
+        throw e
     }
 }

@@ -1,4 +1,5 @@
 /* eslint-disable no-unused-vars */
+import { UnsupportedChainIdError } from '@web3-react/core';
 import {parseUnits} from 'ethers/lib/utils';
 import {forEach, split, trim} from 'lodash';
 
@@ -56,3 +57,54 @@ export const splitERC1125Token = (value: string) => {
   });
   return { address, tokenId, amount };
 };
+
+export const validateChain = (error: any) => {
+  let supported: number[] = []
+  let unSupported: number = 0;
+  let supportedChains: string[] = []
+  let unSupportedChain: string = "";
+  if (error instanceof UnsupportedChainIdError) {
+    error.message.split('.').map(function (id, index) {
+      if(index === 0){
+        unSupported =  parseInt(id.replace(/\D/g, ""));
+        unSupportedChain = chainIdToName(unSupported) ?? "unknown";
+      }
+      if(index === 1){
+        id.split(',').map(function (value, index) {
+          if(index === 0){
+            value = value.replace(/\D/g, "");
+          }
+          supported.push(parseInt((value)));
+          supportedChains.push(chainIdToName(parseInt((value))) ?? "unknown")
+          return null
+        })
+      }
+      return null
+    });
+  }else{
+    return null
+  }
+  return {
+    supportedIds: supported,
+    unSupportedId: unSupported,
+    supportedChains: supportedChains,
+    unSupportedChain: unSupportedChain
+  }
+}
+
+export const chainIdToName = (id: number) => {
+  switch(id !== 0){
+    case id === 1:
+      return 'Mainnet'
+    case id === 4:
+      return 'Rinkeby'
+    case id === 137:
+      return 'Polygon'
+    case id === 80001:
+      return 'Mumbai'  
+    case id === 56:
+      return 'Binance'
+    case id === 97:
+      return 'Binance Testnet'
+  }
+}

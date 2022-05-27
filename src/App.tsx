@@ -8,10 +8,10 @@ import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import { Web3ReactProvider } from "@web3-react/core";
 import { ToastContainer } from "react-toastify";
 import ScrollToTop from "./components/Common/ScrollToTop";
-// import Header from "./components/Header/Header";
-// import Footer from "./components/Footer/Footer";
-import RouteError from "./routes/RouteError";
+import Header from "./components/Header";
+import RouteError from "./components/Common/RouteError";
 import Home from "./pages/Home";
+import StarsBg from "./components/Background/Stars";
 
 function getLibrary(provider: any) {
   const library = new ethers.providers.Web3Provider(provider);
@@ -25,8 +25,9 @@ function App() {
       <ThemeProvider theme={CustomTheme}>
         <Web3ReactProvider getLibrary={getLibrary}>
           <Router>
+            <StarsBg />
             <ScrollToTop />
-            {/* <Header /> */}
+            <Header />
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="*" element={<RouteError />} />

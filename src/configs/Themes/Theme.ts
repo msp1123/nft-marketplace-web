@@ -23,7 +23,7 @@ const CustomTheme = createTheme({
   typography: {
     fontFamily: [
       'Poppins',
-
+      'Orbitron'
     ].join(','),
   }
 });
