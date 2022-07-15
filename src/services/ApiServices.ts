@@ -1,20 +1,16 @@
 import axios from "axios";
+import { toast } from "react-toastify";
 
 const api = axios.create({
     baseURL: `http://localhost:3200/v1`
 });
 
-export async function GetAllNfts() {
-    let response;
-    try {
-        response = await api.get(`/nfts`);
-        if (response.status === 200) {
-            return response.data;
-        } else {
-            let message = response.data;
-            throw new Error(message.error);
-        }
-    } catch (e) {
-        throw e
+export async function Login(data: Object) {
+    let res = await api.post(`/user/login`, data)
+    if(res.status === 200){
+        toast.success(res.data.message)
+        return res.data;
+    }else{
+        toast.error(res.data.message)
     }
 }

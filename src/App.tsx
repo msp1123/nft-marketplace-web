@@ -12,6 +12,7 @@ import Header from "./components/Header";
 import RouteError from "./components/Common/RouteError";
 import Home from "./pages/Home";
 import StarsBg from "./components/Background/Stars";
+import 'react-toastify/dist/ReactToastify.css';
 
 function getLibrary(provider: any) {
   const library = new ethers.providers.Web3Provider(provider);
@@ -35,14 +36,15 @@ function App() {
             {/* <Footer /> */}
             <ToastContainer
               position="top-right"
-              autoClose={5000}
-              hideProgressBar={false}
+              autoClose={4000}
+              hideProgressBar
               newestOnTop={false}
               closeOnClick
               rtl={false}
               pauseOnFocusLoss
               draggable
               pauseOnHover
+              theme="dark"
             />
           </Router>
         </Web3ReactProvider>
