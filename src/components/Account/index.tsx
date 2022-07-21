@@ -39,7 +39,8 @@ const Account = () => {
   
   const signMessage = useCallback(async () => {
     let signedValues = await getSignature(account ?? "", window);
-    await Login(signedValues);
+    let res = await Login(signedValues);
+    console.log(res);
   }, [account])
 
   return (

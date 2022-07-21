@@ -1,18 +1,14 @@
 import React from "react";
 import { ethers } from "ethers";
-import Box from "@mui/material/Box";
-import CssBaseline from "@mui/material/CssBaseline";
-import CustomTheme from "./configs/Themes/Theme";
-import { ThemeProvider } from "@mui/material";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import { Web3ReactProvider } from "@web3-react/core";
 import { ToastContainer } from "react-toastify";
-import ScrollToTop from "./components/Common/ScrollToTop";
+import ScrollToTop from "./pages/Common/ScrollToTop";
 import Header from "./components/Header";
-import RouteError from "./components/Common/RouteError";
+import RouteError from "./pages/Common/RouteError";
 import Home from "./pages/Home";
-import StarsBg from "./components/Background/Stars";
-import 'react-toastify/dist/ReactToastify.css';
+import "react-toastify/dist/ReactToastify.css";
+import "./styles/globals.sass"
 
 function getLibrary(provider: any) {
   const library = new ethers.providers.Web3Provider(provider);
@@ -22,35 +18,32 @@ function getLibrary(provider: any) {
 
 function App() {
   return (
-    <Box>
-      <ThemeProvider theme={CustomTheme}>
-        <Web3ReactProvider getLibrary={getLibrary}>
-          <Router>
-            <StarsBg />
-            <ScrollToTop />
-            <Header />
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="*" element={<RouteError />} />
-            </Routes>
-            {/* <Footer /> */}
-            <ToastContainer
-              position="top-right"
-              autoClose={4000}
-              hideProgressBar
-              newestOnTop={false}
-              closeOnClick
-              rtl={false}
-              pauseOnFocusLoss
-              draggable
-              pauseOnHover
-              theme="dark"
-            />
-          </Router>
-        </Web3ReactProvider>
-        <CssBaseline />
-      </ThemeProvider>
-    </Box>
+    <Web3ReactProvider getLibrary={getLibrary}>
+      <Router>
+        <ScrollToTop />
+        <Header />
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/create" element={<Home />} />
+          <Route path="/profile" element={<Home />} />
+          <Route path="/explore" element={<Home />} />
+          <Route path="/marketplace" element={<Home />} />
+          <Route path="*" element={<RouteError />} />
+        </Routes>
+        <ToastContainer
+          position="top-right"
+          autoClose={4000}
+          hideProgressBar
+          newestOnTop={false}
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+          theme="dark"
+        />
+      </Router>
+    </Web3ReactProvider>
   );
 }
 

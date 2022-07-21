@@ -1,5 +1,0 @@
-export const ERC20_NFT_CONTRACT = "0x0"
-export const ERC721_NFT_CONTRACT = "0x0"
-export const ERC1155_NFT_CONTRACT = "0x0"
-export const ERC721_MARKET_CONTRACT = "0x0"
-export const ERC1155_MARKET_CONTRACT = "0x0"

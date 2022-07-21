@@ -1,9 +1,11 @@
 import * as React from "react";
-import { UnsupportedChainIdError, useWeb3React } from "@web3-react/core";
 import Account from "../Account";
 import classes from "./Header.module.sass";
+import { isMobile } from "react-device-detect";
 import { validateChain } from "../../utils/helpers";
-import HeaderButton from "../Buttons/HeaderButton";
+import { UnsupportedChainIdError, useWeb3React } from "@web3-react/core";
+import IconButton from "../Buttons/IconButton";
+import { FaRegUser } from "react-icons/fa";
 
 const Header = () => {
   const { active, error } = useWeb3React();
@@ -34,22 +36,15 @@ const Header = () => {
       {showWarningBanner ? (
         <div className={classes.topBanner}>
           {`You are connected to ${unSupportedChain}. Please change your network to ${supportedChain}`}
-          .
         </div>
       ) : null}
-      <div className={classes.headerMain}>
-        <div className={classes.title}>
-          <span>NFT MARKET</span>
-        </div>
-        <div className={classes.actions}>
-          <div className={classes.navMain}>
-            <HeaderButton label="Home" />
-            <HeaderButton label="Explore" />
-            <HeaderButton label="Ranking" />
-            <HeaderButton label="Create" />
-          </div>
+      <div className={classes.main}>
+        <h4>Unicorn</h4>
+        {isMobile ? (
+          <IconButton icon={<FaRegUser size={20}/>} onClick={() => {}} />
+        ) : (
           <Account />
-        </div>
+        )}
       </div>
     </div>
   );

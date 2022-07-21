@@ -1,8 +1,8 @@
 import {ethers} from 'ethers';
 import {simpleRpcProvider} from './providers';
-import erc20Abi from '../configs/Contract/Abi/erc20.json';
-import erc721Abi from '../configs/Contract/Abi/erc721.json';
-import erc1155Abi from '../configs/Contract/Abi/erc1155.json';
+import erc20Abi from '../abi/erc20.json';
+import erc721Abi from '../abi/erc721.json';
+import erc1155Abi from '../abi/erc1155.json';
 
 const getContract = (
   abi: any,
