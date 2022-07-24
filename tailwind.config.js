@@ -3,8 +3,16 @@ module.exports = {
   content: [
     "./src/**/*.{js,jsx,ts,tsx}"
   ],
+  darkMode: true,
   theme: {
-    extend: {},
+    extend: {
+      fontFamily: {
+        "cinzel": "Audiowide, 'cursive'",
+      }
+    },
   },
-  plugins: [],
+  plugins: [
+    require('@tailwindcss/forms'),
+    require('@tailwindcss/aspect-ratio'),
+  ],
 }

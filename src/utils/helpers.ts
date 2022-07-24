@@ -6,7 +6,9 @@ import moment from 'moment';
 
 export const minifyAddress = (address: string, size: number) =>
   `${address.slice(0, size || 6)}...${address.slice(-size || -4, address.length)}`;
-
+  
+export const metamaskDappLink = "https://metamask.app.link/dapp/192.168.18.229:3000";
+  
 export enum GAS_PRICE {
   Default = '5',
   Fast = '6',

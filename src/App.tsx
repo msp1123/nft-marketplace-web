@@ -9,6 +9,7 @@ import RouteError from "./pages/Common/RouteError";
 import Home from "./pages/Home";
 import "react-toastify/dist/ReactToastify.css";
 import "./styles/globals.sass"
+import Footer from "./components/Footer";
 
 function getLibrary(provider: any) {
   const library = new ethers.providers.Web3Provider(provider);
@@ -42,6 +43,7 @@ function App() {
           pauseOnHover
           theme="dark"
         />
+        <Footer />
       </Router>
     </Web3ReactProvider>
   );
