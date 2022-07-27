@@ -56,14 +56,14 @@ export default function Footer() {
         </nav>
         <div className="mt-8 flex justify-center space-x-6 cursor-pointer">
           {navigation.social.map((social) => (
-            <td
+            <div
               key={social.name}
               onClick={()=> window.open(social.link, "_blank")}
               className="text-gray-300 hover:text-gray-200"
             >
               <span className="sr-only">{social.name}</span>
               <social.icon className="h-6 w-6" aria-hidden="true" />
-            </td>
+            </div>
           ))}
         </div>
         <p className="mt-8 text-center text-base text-gray-400">

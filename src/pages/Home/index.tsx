@@ -70,6 +70,57 @@ const cards = [
   },
 ];
 
+const collections = [
+  {
+    title: "Bored Ape Yacht Club",
+    href: "#",
+    category: { name: "Collectibles", href: "#" },
+    description:
+      "The Bored Ape Yacht Club is a collection of 10,000 unique Bored Ape NFTs unique digital collectibles living on the Ethereum blockchain. Your Bored Ape doubles as your Yacht Club membership card, and grants access to members-only benefits, the first of which is access to THE BATHROOM, a collaborative graffiti board.",
+    imageUrl:
+      "https://lh3.googleusercontent.com/i5dYZRkVCUK97bfprQ3WXyrT9BnLSZtVKGJlKQ919uaUB0sxbngVCioaiyu9r6snqfi2aaTyIvv6DHm4m2R3y7hMajbsv14pSZK8mhs=h600",
+    rarity: "Legendary Rare",
+    author: {
+      name: "YugaLabs",
+      href: "#",
+      imageUrl:
+        "https://lh3.googleusercontent.com/Ju9CkWtV-1Okvf45wo8UctR-M9He2PjILP0oOvxE89AyiPPGtrR3gysu1Zgy0hjd2xKIgjJJtWIc0ybj4Vd7wv8t3pxDGHoJBzDB=s168",
+    },
+  },
+  {
+    title: "CryptoPunks",
+    href: "#",
+    category: { name: "Games", href: "#" },
+    description:
+      "CryptoPunks launched as a fixed set of 10,000 items in mid-2017 and became one of the inspirations for the ERC-721 standard. They have been featured in places like The New York Times, Christie’s of London, Art|Basel Miami, and The PBS NewsHour.",
+    imageUrl:
+      "https://lh3.googleusercontent.com/48oVuDyfe_xhs24BC2TTVcaYCX7rrU5mpuQLyTgRDbKHj2PtzKZsQ5qC3xTH4ar34wwAXxEKH8uUDPAGffbg7boeGYqX6op5vBDcbA=h600",
+    rarity: "Rare",
+    author: {
+      name: "ThePunks",
+      href: "#",
+      imageUrl:
+        "https://lh3.googleusercontent.com/BdxvLseXcfl57BiuQcQYdJ64v-aI8din7WPk0Pgo3qQFhAUH-B6i-dCqqc_mCkRIzULmwzwecnohLhrcH8A9mpWIZqA7ygc52Sr81hE=s168",
+    },
+  },
+  {
+    title: "Crypto Unicorns Market",
+    href: "#",
+    category: { name: "Digital Art", href: "#" },
+    description:
+      "Crypto Unicorns is a Digital Pet Collecting and Farming Game built on the blockchain. In Crypto Unicorns, gameplay centers around awesomely unique Unicorn NFTs which players combine with Land NFTs to utilize in a fun farming simulation, as well as other gameplay including Jousting, Racing, and Team RPG.",
+    imageUrl:
+      "https://lh3.googleusercontent.com/1CbIubOWnJC3q50wSwbFi0EwuLZIocdUq6SeBBQhenNp2XdBotRFXWmLgGg_j6u-mClIm89GwxXI4GupRepmXIKtMTn8N2xv3RJ-4w=h600",
+    rarity: "Breed",
+    author: {
+      name: "LagunaGames",
+      href: "#",
+      imageUrl:
+        "https://lh3.googleusercontent.com/jLi7QyLxZLXAeAqtKuecs5ebhGpDwWG6iI_EsfeXanpCCjCnDtqW9Db4b2ZAO0poqfIgBuGdYmyJCFL-c9wVJFIjJUZ2Lmna13kTDg=s168",
+    },
+  },
+];
+
 export default function Home() {
   const { active, activate } = useWeb3React();
 
@@ -238,7 +289,7 @@ export default function Home() {
             ))}
           </div>
         </section>
-        
+
         {/* Mint NFT banner section */}
         <section
           aria-labelledby="social-impact-heading"
@@ -273,6 +324,90 @@ export default function Home() {
                 >
                   Mint now
                 </a>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Collection Details */}
+        <section
+          aria-labelledby="social-impact-heading"
+          className="max-w-7xl mx-auto pt-12 px-4 sm:pt-12 sm:px-4 lg:px-6"
+        >
+          <div className="relative bg-slate-900 pb-16 px-4 lg:pb-12">
+            <div className="absolute inset-0">
+              <div className="bg-slate-900 h-1/3 sm:h-2/3" />
+            </div>
+            <div className="relative max-w-7xl mx-auto">
+              <div className="text-center">
+                <h2 className="text-3xl tracking-tight font-extrabold text-gray-200 sm:text-4xl">
+                  Collections
+                </h2>
+                <p className="mt-3 max-w-2xl mx-auto text-xl text-gray-300 sm:mt-4">
+                  Explore all the collections by popularity, categories and
+                  rarity.
+                </p>
+              </div>
+              <div className="mt-12 max-w-lg mx-auto grid gap-5 lg:grid-cols-3 lg:max-w-none cursor-pointer">
+                {collections.map((collection) => (
+                  <div
+                    key={collection.title}
+                    className="flex flex-col rounded-lg shadow-lg overflow-hidden"
+                  >
+                    <div className="flex-shrink-0">
+                      <img
+                        className="h-48 w-full object-cover"
+                        src={collection.imageUrl}
+                        alt=""
+                      />
+                    </div>
+                    <div className="flex-1 bg-gradient-to-b from-purple-700 to-indigo-500 p-6 flex flex-col justify-between">
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-pink-500">
+                          <a
+                            href={collection.category.href}
+                            className="hover:underline"
+                          >
+                            {collection.category.name}
+                          </a>
+                        </p>
+                        <a href={collection.href} className="block mt-2">
+                          <p className="text-xl font-semibold text-gray-200">
+                            {collection.title}
+                          </p>
+                          <p className="mt-3 text-base text-gray-300">
+                            {collection.description}
+                          </p>
+                        </a>
+                      </div>
+                      <div className="mt-6 flex items-center">
+                        <div className="flex-shrink-0">
+                          <a href={collection.author.href}>
+                            <span className="sr-only">{collection.author.name}</span>
+                            <img
+                              className="h-10 w-10 rounded-full"
+                              src={collection.author.imageUrl}
+                              alt=""
+                            />
+                          </a>
+                        </div>
+                        <div className="ml-3">
+                          <p className="text-sm font-medium text-gray-200">
+                            <a
+                              href={collection.author.href}
+                              className="hover:underline"
+                            >
+                              {collection.author.name}
+                            </a>
+                          </p>
+                          <div className="flex space-x-1 text-sm text-gray-300">
+                            <span>{collection.rarity}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>

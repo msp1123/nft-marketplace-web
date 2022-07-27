@@ -83,25 +83,25 @@ const Header = () => {
     {
       name: "Home",
       description: "Overview of the application.",
-      href: "#",
+      href: "/",
       icon: HomeIcon,
     },
     {
       name: "Marketplace",
       description: "Explore the Market Buy your first NFT.",
-      href: "#",
+      href: "/marketplace",
       icon: ViewGridIcon,
     },
     {
       name: "Ranking",
       description: "Statistics of all active NFTs.",
-      href: "#",
+      href: "/ranking",
       icon: ChartBarIcon,
     },
     {
       name: "Create",
       description: "Create your own NFT here.",
-      href: "#",
+      href: "/create-nft",
       icon: CursorClickIcon,
     },
   ];
