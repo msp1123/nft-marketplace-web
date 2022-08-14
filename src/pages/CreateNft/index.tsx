@@ -1,111 +1,219 @@
-import { useState } from "react";
+import { toast } from "react-toastify";
+import { useWeb3React } from "@web3-react/core";
+import { Fragment, useCallback, useEffect, useState } from "react";
+import { Listbox, Transition } from "@headlessui/react";
+import { storage } from "../../services/FirebaseServices";
 import { CheckIcon, SelectorIcon } from "@heroicons/react/solid";
-import { Combobox } from "@headlessui/react";
-
-const chains = [
-  { chainId: 1, name: "Ethereum" },
-  { chainId: 137, name: "Polygon" },
-  { chainId: 4, name: "Rinkeby" },
-  { chainId: 5, name: "Goerli" },
-];
-
-const collections = [
-  { id: 1, name: "Unicorns" },
-  { id: 2, name: "Purple Warrior" },
-];
-
-function classNames(...classes: any) {
-  return classes.filter(Boolean).join(" ");
-}
+import { ref, getDownloadURL, uploadBytesResumable } from "firebase/storage";
+import { CreateToken, GetUniqueTokenId, GetUserCollections } from "../../services/ApiServices";
+import CONFIG from "../../configs/globalConfigs";
 
 export default function CreateNft() {
-  const [chainQuery, setChainQuery] = useState("");
-  const [selectedChain, setSelectedChain] = useState();
-  const [collectionQuery, setCollectionQuery] = useState("");
-  const [selectedCollection, setSelectedCollection] = useState();
+  const { account, active } = useWeb3React();
 
-  const filteredChains =
-    chainQuery === ""
-      ? chains
-      : chains.filter((chain) => {
-          return chain.name.toLowerCase().includes(chainQuery.toLowerCase());
-        });
+  const [supply, setSupply] = useState(5);
+  const [royalty, setRoyalty] = useState(0);
+  const [chainId, setChainId] = useState(0);
+  const [tokenId, setTokenId] = useState(0);
+  
+  const [name, setName] = useState("");
+  // const [txHash, setTxHash] = useState("");
+  const [collection, setCollection] = useState("");
+  const [nftAddress, setNftAddress] = useState("");
+  const [description, setDescription] = useState("");
+  const [notifications, setNotifications] = useState<string[]>([]);
 
-  const filteredCollections =
-    collectionQuery === ""
-      ? collections
-      : collections.filter((collection) => {
-          return collection.name
-            .toLowerCase()
-            .includes(collectionQuery.toLowerCase());
-        });
-        
-  const validateForm = () => {
-    let name = document.getElementById('name');
-    console.log(name);
+  // Helper variables
+  const [buttonLabel, setButtonLabel] = useState("Create");
+  const [isButtonClicked, setIsButtonClicked] = useState(false);
+
+  // Temp variables
+  const [imageFile, setImageFile] = useState<any>();
+  const [collections, setCollections] = useState<any[]>();
+  const [imagePreview, setImagePreview] = useState<any>();
+
+  const onImageChange = (event: any) => {
+    if (event.target.files && event.target.files[0]) {
+      setImageFile(event.target.files[0]);
+      let reader = new FileReader();
+      reader.onload = (e) => {
+        setImagePreview(e.target?.result);
+      };
+      reader.readAsDataURL(event.target.files[0]);
+    }
+  };
+  
+  const getTokenId = useCallback(async () => {
+    if(!chainId || !nftAddress) return;
+    let tokenId = await GetUniqueTokenId(chainId, nftAddress);
+    if (tokenId) {
+      setTokenId(tokenId)
+    } else {
+      setButtonLabel("Failed");
+      setIsButtonClicked(false);
+    }
+    console.log(tokenId);
+    
+  }, [chainId, nftAddress]);
+  
+  const fetchCollections = useCallback(async () => {
+    if (!account) return toast.error("Connect wallet to continue");
+    let collectionsT = await GetUserCollections(account!, "trim=true");
+    if (collectionsT) {
+      setCollections(collectionsT);
+      setChainId(collectionsT[0].chainId)
+      setNftAddress(collectionsT[0].address)
+      setCollection(collectionsT[0].name)
+      getTokenId();
+    }
+  }, [account, getTokenId]);
+  
+  const onCollectionChange = async (name: any) => {
+    let collectionT = collections?.find(c => c.name === name);
+    if(collectionT){
+      setChainId(collectionT.chainId);
+      setNftAddress(collectionT.address);
+      setCollection(name);
+      getTokenId();
+    }
+  }
+  
+  const handleNotifications = (e: any) => {
+    const name = e.target.getAttribute("name")
+    let element = document.getElementById(name) as HTMLInputElement;
+    if(element.checked){
+      setNotifications([...notifications!, name])
+    }else{
+      setNotifications(notifications?.filter(n => n !== name))
+    }
   }
 
+  const uploadImage = async () => {
+    let fileType = imageFile.type.split("/")[1];
+    let fileName = "TKN-" + tokenId;
+
+    const storageRef = ref(
+      storage,
+      `${account}/${nftAddress}/${fileName}.${fileType}`
+    );
+    const uploadTask = uploadBytesResumable(storageRef, imageFile);
+
+    uploadTask.on(
+      "state_changed",
+      (snapshot) => {
+        const progress = Math.round(
+          (snapshot.bytesTransferred / snapshot.totalBytes) * 100
+        );
+        setButtonLabel(`Uploading ${progress}%`);
+      },
+      (error) => {
+        setButtonLabel("Failed");
+        setIsButtonClicked(false);
+        toast.error("Image upload failed!.");
+      },
+      () => {
+        getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
+          createToken(downloadURL);
+        });
+      }
+    );
+  };
+
+  const createToken = async (imageUrl: string) => {
+    setButtonLabel("Creating");
+    let input = {
+      name: name,
+      image: imageUrl,
+      description: description,
+    };
+
+    let collection = await CreateToken(input);
+    if (collection) {
+      setButtonLabel("Created");
+      window.location.reload();
+    } else {
+      setButtonLabel("Failed");
+      setIsButtonClicked(false);
+    }
+  };
+
+  const validateForm = () => {
+    setButtonLabel("Creating");
+    setIsButtonClicked(true);
+    let authToken = localStorage.getItem(CONFIG.authTokenStorageKey);
+    if (!authToken) {
+      setButtonLabel("Create");
+      setIsButtonClicked(false);
+      return toast.error("Session expired. Please login.");
+    }
+    if (!imageFile) {
+      setButtonLabel("Create");
+      setIsButtonClicked(false);
+      return toast.error("No image selected.");
+    }
+    if (!account) {
+      setButtonLabel("Create");
+      setIsButtonClicked(false);
+      return toast.error("Connect wallet before continue");
+    }
+    if (!name) {
+      setButtonLabel("Create");
+      setIsButtonClicked(false);
+      return toast.error("Collection name is required.");
+    }
+    uploadImage();
+  };
+
+  useEffect(() => {
+    if (active) fetchCollections();
+  }, [active, fetchCollections]);
+
   return (
-    <div className="flex justify-center bg-slate-900 pt-12 px-4">
-      <form className="space-y-8 divide-y divide-gray-200">
-        <div className="space-y-4">
+    <div className="flex justify-center bg-slate-900 pt-8 px-4 min-h-full">
+      <form className="space-y-8 divide-y divide-gray-200 max-w-xl">
+        <div className="space-y-4 divide-y divide-gray-200">
           <div>
             <div>
               <h1 className="text-6xl leading-6 font-medium text-white">
                 Create NFT
               </h1>
-              <p className="mt-6 text-sm text-gray-300">
+              <p className="mt-6 text-md text-gray-300">
                 This information will be displayed publicly so be careful what
                 you share.
               </p>
             </div>
-
-            <div className="mt-6 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
-              <div className="sm:col-span-3">
-                <label
-                  htmlFor="name"
-                  className="block text-sm font-medium text-gray-300"
-                >
-                  Name
-                </label>
-                <div className="mt-1">
-                  <input
-                    type="text"
-                    name="name"
-                    id="name"
-                    placeholder="Asset name"
-                    autoComplete="given-name"
-                    className="shadow-sm text-white caret-purple-200 bg-slate-800 focus:ring-purple-500 focus:border-purple-500 block w-full sm:text-sm border-gray-300 rounded-md"
-                  />
+            {imagePreview ? (
+              <div className="sm:col-span-6 mt-6 flex flex-shrink-0 items-baseline justify-start">
+                <div className="rounded-lg w-auto bg-slate-800 px-2 pt-2 pb-3">
+                  <div className="rounded-lg overflow-hidden max-h-96 max-w-xs">
+                    <img src={imagePreview} alt={"unknown file"} />
+                  </div>
+                  <div className="bg-slate-800 pt-5 relative">
+                    <h3 className="text-gray-200 font-medium">
+                      {name || "Asset Name"}
+                    </h3>
+                    <div className="flex flex-row pb-2">
+                      <h2 className="text-gray-400 pr-1 font-light text-xs">
+                        by
+                      </h2>
+                      <h3 className="text-gray-300 font-light text-xs">
+                        {collection}
+                      </h3>
+                    </div>
+                    <h3 className="text-gray-300 font-light text-xs w-64">
+                      {description ||
+                        "Asset description will goes here. You can change it with whatever you want."}
+                    </h3>
+                  </div>
                 </div>
               </div>
-              <div className="sm:col-span-6">
-                <label
-                  htmlFor="description"
-                  className="block text-sm font-medium text-gray-300"
-                >
-                  Description
-                </label>
-                <div className="mt-1">
-                  <textarea
-                    id="description"
-                    name="description"
-                    rows={3}
-                    className="shadow-sm text-white caret-purple-200 bg-slate-800 focus:ring-purple-500 focus:border-purple-500 block w-full sm:text-sm border border-gray-300 rounded-md"
-                    defaultValue={""}
-                  />
-                </div>
-                <p className="mt-2 text-sm text-gray-500">
-                  Write a few sentences about the asset.
-                </p>
-              </div>
-
-              <div className="sm:col-span-6">
+            ) : (
+              <div className="sm:col-span-6 mt-6">
                 <label
                   htmlFor="cover-photo"
-                  className="block text-sm font-medium text-gray-300"
+                  className="block text-lg font-medium text-gray-300"
                 >
-                  Asset Image, Video, Music
+                  Asset Image
                 </label>
                 <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
                   <div className="space-y-1 text-center">
@@ -123,7 +231,7 @@ export default function CreateNft() {
                         strokeLinejoin="round"
                       />
                     </svg>
-                    <div className="flex text-sm text-gray-500">
+                    <div className="flex text-lg text-gray-500">
                       <label
                         htmlFor="file-upload"
                         className="relative cursor-pointer rounded-md font-medium text-purple-600 hover:text-purple-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-purple-500"
@@ -133,22 +241,68 @@ export default function CreateNft() {
                           id="file-upload"
                           name="file-upload"
                           type="file"
-                          accept="image/png, image/gif, image/jpeg, video/mp4, audio/mp3"
+                          onChange={onImageChange}
+                          accept="image/png, image/gif, image/jpeg"
                           className="sr-only"
                         />
                       </label>
                       <p className="pl-1">or drag and drop</p>
                     </div>
                     <p className="text-xs text-gray-500">
-                      PNG, JPG, GIF, MP4, MP3 up to 20MB
+                      PNG, JPG, GIF up to 20MB
                     </p>
                   </div>
                 </div>
               </div>
+            )}
+
+            <div className="mt-6 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+              <div className="sm:col-span-4">
+                <label
+                  htmlFor="name"
+                  className="block text-lg font-medium text-gray-300"
+                >
+                  Name
+                </label>
+                <div className="mt-1">
+                  <input
+                    type="text"
+                    name="name"
+                    id="name"
+                    placeholder="Asset name"
+                    autoComplete="given-name"
+                    className="shadow-sm text-white caret-purple-200 bg-slate-800 focus:ring-purple-500 focus:border-purple-500 block w-full sm:text-lg border-gray-300 rounded-md"
+                    defaultValue={name}
+                    onChange={(c) => setName(c.target.value)}
+                  />
+                </div>
+              </div>
+              <div className="sm:col-span-6">
+                <label
+                  htmlFor="description"
+                  className="block text-lg font-medium text-gray-300"
+                >
+                  Description
+                </label>
+                <div className="mt-1">
+                  <textarea
+                    id="description"
+                    name="description"
+                    rows={3}
+                    className="shadow-sm text-white caret-purple-200 bg-slate-800 focus:ring-purple-500 focus:border-purple-500 block w-full sm:text-lg border border-gray-300 rounded-md"
+                    defaultValue={description}
+                    onChange={(c) => setDescription(c.target.value)}
+                  />
+                </div>
+                <p className="mt-2 text-lg text-gray-500">
+                  Write a few sentences about the asset.
+                </p>
+              </div>
+
               <div className="sm:col-span-3">
                 <label
                   htmlFor="supply"
-                  className="block text-sm font-medium text-gray-300"
+                  className="block text-lg font-medium text-gray-300"
                 >
                   Supply
                 </label>
@@ -157,158 +311,105 @@ export default function CreateNft() {
                     type="number"
                     min="1"
                     step="1"
-                    defaultValue="1"
+                    value={supply}
+                    onChange={(c) => setSupply(parseInt(c.target.value))}
                     name="first-name"
                     id="supply"
-                    autoComplete="given-name"
-                    className="shadow-sm bg-slate-800 text-white caret-purple-200 focus:ring-purple-500 focus:border-purple-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                    autoComplete="supply"
+                    className="shadow-sm bg-slate-800 text-white caret-purple-200 focus:ring-purple-500 focus:border-purple-500 block w-full sm:text-lg border-gray-300 rounded-md"
                   />
                 </div>
               </div>
-
               <div className="sm:col-span-3">
-                <Combobox
-                  as="div"
-                  value={selectedChain}
-                  onChange={setSelectedChain}
+                <label
+                  htmlFor="royalty"
+                  className="block text-lg font-medium text-gray-300"
                 >
-                  <Combobox.Label className="block text-sm font-medium text-gray-300">
-                    Blockchain
-                  </Combobox.Label>
-                  <div className="relative mt-1">
-                    <Combobox.Input
-                      id="blockchain"
-                      className="w-full pointer-events-none rounded-md border border-gray-300 bg-slate-800 text-white caret-purple-200 py-2 pl-3 pr-10 shadow-sm focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500 sm:text-sm"
-                      onChange={(event) => setChainQuery(event.target.value)}
-                      defaultValue={chains[0].name}
-                      displayValue={(chain: any) => chain?.name}
-                    />
-                    <Combobox.Button className="absolute inset-y-0 right-0 flex items-center rounded-r-md px-2 focus:outline-none">
-                      <SelectorIcon
-                        className="h-5 w-5 text-gray-400"
-                        aria-hidden="true"
-                      />
-                    </Combobox.Button>
-
-                    {filteredChains.length > 0 && (
-                      <Combobox.Options className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-slate-700 py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
-                        {filteredChains.map((chain) => (
-                          <Combobox.Option
-                            key={chain.chainId}
-                            value={chain}
+                  Royalty
+                </label>
+                <div className="mt-1">
+                  <input
+                    type="number"
+                    min="1"
+                    max="10"
+                    step="1"
+                    value={royalty}
+                    onChange={(c) => setRoyalty(parseInt(c.target.value))}
+                    name="first-name"
+                    id="royalty"
+                    autoComplete="royalty"
+                    className="shadow-sm bg-slate-800 text-white caret-purple-200 focus:ring-purple-500 focus:border-purple-500 block w-full sm:text-lg border-gray-300 rounded-md"
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="pt-6 pb-4">
+              <label
+                htmlFor="collection"
+                className="block text-lg font-medium text-gray-300"
+              >
+                Collection
+              </label>
+              <div className="top-16">
+                <Listbox value={collection} onChange={onCollectionChange}>
+                  <div className="mt-1">
+                    <Listbox.Button className="flex justify-between w-full cursor-default text-white caret-purple-200 bg-slate-800 pt-2 pb-1 pl-3 text-left shadow-md border border-gray-300 rounded-md">
+                      <span className="block truncate">
+                        {collection ? collection : "-"}
+                      </span>
+                      <span className="pointer-events-none inset-y-0 right-0 flex items-center pr-2">
+                        <SelectorIcon
+                          className="h-5 w-5 text-gray-400"
+                          aria-hidden="true"
+                        />
+                      </span>
+                    </Listbox.Button>
+                    <Transition
+                      as={Fragment}
+                      leave="transition ease-in duration-100"
+                      leaveFrom="opacity-100"
+                      leaveTo="opacity-0"
+                    >
+                      <Listbox.Options className="relative mt-1 max-h-60 w-full overflow-auto rounded-md bg-slate-800 py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-lg">
+                        {collections?.map((collection, index) => (
+                          <Listbox.Option
+                            key={index}
                             className={({ active }) =>
-                              classNames(
-                                "relative cursor-default select-none py-2 pl-3 pr-9",
+                              `relative cursor-default select-none py-2 pl-10 pr-4 ${
                                 active
-                                  ? "bg-purple-600 text-white"
-                                  : "text-gray-300"
-                              )
+                                  ? "bg-slate-700 text-gray-200"
+                                  : "text-gray-400"
+                              }`
                             }
+                            value={collection.name}
                           >
-                            {({ active, selected }) => (
+                            {({ selected }) => (
                               <>
                                 <span
-                                  className={classNames(
-                                    "block truncate",
-                                    selected && "font-semibold"
-                                  )}
+                                  className={`block truncate ${
+                                    selected ? "font-medium" : "font-normal"
+                                  }`}
                                 >
-                                  {chain.name}
+                                  {collection.name}
                                 </span>
-
-                                {selected && (
-                                  <span
-                                    className={classNames(
-                                      "absolute inset-y-0 right-0 flex items-center pr-4",
-                                      active ? "text-white" : "text-purple-600"
-                                    )}
-                                  >
+                                {selected ? (
+                                  <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-purple-600">
                                     <CheckIcon
                                       className="h-5 w-5"
                                       aria-hidden="true"
                                     />
                                   </span>
-                                )}
+                                ) : null}
                               </>
                             )}
-                          </Combobox.Option>
+                          </Listbox.Option>
                         ))}
-                      </Combobox.Options>
-                    )}
+                      </Listbox.Options>
+                    </Transition>
                   </div>
-                </Combobox>
+                </Listbox>
               </div>
             </div>
-            <Combobox
-              as="div"
-              value={selectedCollection}
-              onChange={setSelectedCollection}
-              className="mt-6"
-            >
-              <Combobox.Label className="block text-sm font-medium text-gray-300">
-                Collection
-              </Combobox.Label>
-              <div className="relative mt-1">
-                <Combobox.Input
-                  id="collection"
-                  className="w-full pointer-events-none rounded-md border border-gray-300 bg-slate-800 text-white caret-purple-200 py-2 pl-3 pr-10 shadow-sm focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500 sm:text-sm"
-                  onChange={(event) => setCollectionQuery(event.target.value)}
-                  displayValue={(collection: any) => collection?.name}
-                />
-                <Combobox.Button className="absolute inset-y-0 right-0 flex items-center rounded-r-md px-2 focus:outline-none">
-                  <SelectorIcon
-                    className="h-5 w-5 text-gray-400"
-                    aria-hidden="true"
-                  />
-                </Combobox.Button>
-
-                {filteredCollections.length > 0 && (
-                  <Combobox.Options className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-slate-700 py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
-                    {filteredCollections.map((collection) => (
-                      <Combobox.Option
-                        key={collection.id}
-                        value={collection}
-                        className={({ active }) =>
-                          classNames(
-                            "relative cursor-default select-none py-2 pl-3 pr-9",
-                            active
-                              ? "bg-purple-600 text-white"
-                              : "text-gray-300"
-                          )
-                        }
-                      >
-                        {({ active, selected }) => (
-                          <>
-                            <span
-                              className={classNames(
-                                "block truncate",
-                                selected && "font-semibold"
-                              )}
-                            >
-                              {collection.name}
-                            </span>
-
-                            {selected && (
-                              <span
-                                className={classNames(
-                                  "absolute inset-y-0 right-0 flex items-center pr-4",
-                                  active ? "text-white" : "text-purple-600"
-                                )}
-                              >
-                                <CheckIcon
-                                  className="h-5 w-5"
-                                  aria-hidden="true"
-                                />
-                              </span>
-                            )}
-                          </>
-                        )}
-                      </Combobox.Option>
-                    ))}
-                  </Combobox.Options>
-                )}
-              </div>
-            </Combobox>
           </div>
 
           <div className="pt-8">
@@ -316,9 +417,11 @@ export default function CreateNft() {
               <h3 className="text-3xl leading-6 font-medium text-white">
                 Notifications
               </h3>
-              <p className="mt-1 text-sm text-gray-400">
-                We'll always let you know about important changes, but you pick
-                what else you want to hear about.
+              <p className="mt-3 text-lg text-gray-400">
+                We'll always let you know about important changes.
+              </p>
+              <p className="mt-1 text-lg text-gray-400">
+                But you pick what else you want to hear about.
               </p>
             </div>
             <div className="mt-6">
@@ -334,15 +437,16 @@ export default function CreateNft() {
                   <div className="relative flex items-start">
                     <div className="flex items-center h-5">
                       <input
-                        id="likes-notify"
-                        name="likes-notify"
+                        id="likes"
+                        name="likes"
                         type="checkbox"
+                        onChange={handleNotifications}
                         className="focus:ring-purple-500 h-4 w-4 text-purple-600 border-gray-300 rounded"
                       />
                     </div>
-                    <div className="ml-3 text-sm">
+                    <div className="ml-3 text-lg">
                       <label
-                        htmlFor="likes-notify"
+                        htmlFor="likes"
                         className="font-medium text-gray-300"
                       >
                         Likes
@@ -355,15 +459,16 @@ export default function CreateNft() {
                   <div className="relative flex items-start">
                     <div className="flex items-center h-5">
                       <input
-                        id="comments-notify"
-                        name="comments-notify"
+                        id="comments"
+                        name="comments"
                         type="checkbox"
+                        onChange={handleNotifications}
                         className="focus:ring-purple-500 h-4 w-4 text-purple-600 border-gray-300 rounded"
                       />
                     </div>
-                    <div className="ml-3 text-sm">
+                    <div className="ml-3 text-lg">
                       <label
-                        htmlFor="comments-notify"
+                        htmlFor="comments"
                         className="font-medium text-gray-300"
                       >
                         Comments
@@ -376,15 +481,16 @@ export default function CreateNft() {
                   <div className="relative flex items-start">
                     <div className="flex items-center h-5">
                       <input
-                        id="purchase-notify"
-                        name="purchase-notify"
+                        id="purchase"
+                        name="purchase"
                         type="checkbox"
+                        onChange={handleNotifications}
                         className="focus:ring-purple-500 h-4 w-4 text-purple-600 border-gray-300 rounded"
                       />
                     </div>
-                    <div className="ml-3 text-sm">
+                    <div className="ml-3 text-lg">
                       <label
-                        htmlFor="purchase-notify"
+                        htmlFor="purchase"
                         className="font-medium text-gray-300"
                       >
                         Purchase
@@ -404,16 +510,16 @@ export default function CreateNft() {
           <div className="flex justify-end">
             <button
               type="button"
-              className="bg-slate-800 py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+              className="bg-slate-800 py-2 px-4 border border-gray-300 rounded-md shadow-sm text-lg font-medium text-gray-300 hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
             >
               Cancel
             </button>
-              <div
-                onClick={() => {return validateForm()}}
-                className="py-3 px-4 mx-3 w-44 text-center rounded-md shadow-lg shadow-gray-500/50 font-medium text-white bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:bg-pink-600"
-              >
-                Create
-              </div>
+            <div
+              onClick={() => (isButtonClicked ? null : validateForm())}
+              className="py-3 px-4 mx-3 w-44 text-center cursor-pointer rounded-md shadow-lg shadow-gray-500/50 font-medium text-white bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:bg-pink-600"
+            >
+              {buttonLabel}
+            </div>
           </div>
         </div>
       </form>

@@ -1,24 +1,9 @@
 /* eslint-disable jsx-a11y/no-redundant-roles */
-/*
-  This example requires Tailwind CSS v2.0+ 
-  
-  This example requires some changes to your config:
-  
-  ```
-  // tailwind.config.js
-  module.exports = {
-    // ...
-    plugins: [
-      // ...
-      require('@tailwindcss/forms'),
-      require('@tailwindcss/aspect-ratio'),
-    ],
-  }
-  ```
-*/
 import { Fragment, useState } from "react";
-import { Dialog, Disclosure, Menu, Transition } from "@headlessui/react";
 import { XIcon } from "@heroicons/react/outline";
+import PolygonIcon from "../../assets/Icons/polygon.png"
+import EthereumIcon from "../../assets/Icons/ethereum.png"
+import { Dialog, Disclosure, Menu, Transition } from "@headlessui/react";
 import {
   ChevronDownIcon,
   FilterIcon,
@@ -35,13 +20,14 @@ const sortOptions = [
   { name: "Price: Low to High", href: "#", current: false },
   { name: "Price: High to Low", href: "#", current: false },
 ];
+
 const categories = [
-  { name: "All", href: "#" },
-  { name: "Collectibles", href: "#" },
-  { name: "Arts", href: "#" },
-  { name: "Photography", href: "#" },
-  { name: "Music", href: "#" },
-  { name: "Video", href: "#" },
+  { name: "All", active: true },
+  { name: "Collectibles", active: false },
+  { name: "Arts", active: false },
+  { name: "Photography", active: false },
+  { name: "Music", active: false },
+  { name: "Video", active: false },
 ];
 
 const filters = [
@@ -79,110 +65,98 @@ const filters = [
 
 const assets = [
   {
-    id: 1,
-    href: "#",
-    price: "50",
-    currency: 'ETH',
+    price: 50,
+    currency: "ETH",
     name: "Snow Cap Sarsaparilla",
+    by: "Unicorns",
     imageSrc:
       "https://lh3.googleusercontent.com/fdxdjAAsIlPXf8pbjDx4aycZHaEFvFVZ1Y9S4EyTM7Hk-zYD3yPEKQ5jXKZd5XcsoeFu4IRdtfZWoDMN3633Jx9DzX54jyscJfcXFA=w282",
   },
   {
-    id: 5,
-    href: "#",
-    price: "50",
-    currency: 'ETH',
+    price: 50,
+    currency: "ETH",
     name: "Snow Cap Sarsaparilla",
+    by: "Monkey king",
     imageSrc:
       "https://lh3.googleusercontent.com/8k_R8EMckL4ciR8QC6vaIL-IcMHYXyWpwh9-5hBK6avGeEB0elv8zja_iWh1X7tOV4UW54kvZ37BBogJDaECKlm8k9Y_JPAi1Tg3=w282",
   },
   {
-    id: 2,
-    href: "#",
-    price: "140",
-    currency: 'MATIC',
+    price: 140,
+    currency: "MATIC",
     name: "Zip Tote Basket",
+    by: "Unicorns",
     imageSrc:
       "https://lh3.googleusercontent.com/MHdI5nIKjItzrhvy4u1nh5EgrKR1jiDO9Ou6VI10XHAMsfZVbuQje2odU_Kb2HDs1dmgEgJ-njRH1SYfo_4Aq1rbSAgtj-WVW2EA=w282",
   },
   {
-    id: 6,
-    href: "#",
-    price: "50",
-    currency: 'MUMBAI',
+    price: 50,
+    currency: "MATIC",
     name: "Nomad Pouch",
+    by: "Wierdo",
     imageSrc:
       "https://lh3.googleusercontent.com/CH0hHgbknxE6jhAEqgNg9CZNn8m3mKmnUuI2R2ukbHEAmB9a4PZKDYm18beMBDS5SoRDGLv83qeU9E5xqPErC334O5LtmUwtzqB7=w282",
   },
   {
-    id: 7,
-    href: "#",
-    price: "140",
-    currency: 'BSC',
+    price: 140,
+    currency: "ETH",
     name: "Zip Tote Basket",
+    by: "Wierdo",
     imageSrc:
       "https://lh3.googleusercontent.com/s99pHohl4I5mJlTdrNqGYWQ9Qk5bccfj_bsk7ZGluHcYt0YqKtpSbt0rkxIe-6ev1T_J_F0stxKiOhoURj_20I81jmfEKBEtgJqgwQ=w282",
   },
   {
-    id: 4,
-    href: "#",
-    price: "140",
-    currency: 'ETH',
+    price: 140,
+    currency: "ETH",
     name: "Zip Tote Basket",
+    by: "Unicorns",
     imageSrc:
       "https://lh3.googleusercontent.com/NP_ut5jkzIp4GovuJiaYpWiM-r0jGo8tVe_9v14YY2YhlY_zTf0Nag4awyMN4Mmz8Kjr7ieKbFNdvVWXtsCzzI91t7ygWMDlSZnT5Q=w282",
   },
   {
-    id: 8,
-    href: "#",
-    price: "50",
-    currency: 'MATIC',
+    price: 50,
+    currency: "MATIC",
     name: "Snow Cap Sarsaparilla",
+    by: "Hyper Kong",
     imageSrc:
       "https://lh3.googleusercontent.com/sRuHccMMUTvZFC9HfPhLdCLnUBANY2wZXO3t_zJPQ92zpGozpkLvjpOY-jLw3jhSdw5cB3UBiKms-xSkeykfeT1os-iRUTUvNdzjN_g=w282",
   },
   {
-    id: 9,
-    href: "#",
-    price: "140",
-    currency: 'ETH',
+    price: 140,
+    currency: "ETH",
     name: "Zip Tote Basket",
+    by: "Evil princess",
     imageSrc:
       "https://lh3.googleusercontent.com/lOZ1dBrxXxabWdV9wpAczzSX-EpPmkGMDxICT3qG4pNQk5el1D5cmuYafadqxhkHtN68DjNbWI6FsB1Rbf_-yS7pF2g_o64YiaTGxQ=w282",
   },
   {
-    id: 10,
-    href: "#",
-    price: "50",
-    currency: 'BSC',
+    price: 50,
+    currency: "ETH",
     name: "Nomad Pouch",
+    by: "Wierdo",
     imageSrc:
       "https://lh3.googleusercontent.com/GyZSwH_xip8se6CDg0FP_--0l9-_O9Ue-U69H2pthZ9GbFTqkIK0yX6Yyk7IKxOHY9cgxLgdNMDYL07FuTlw6jOTSJF0Xvzy_D12=w282",
   },
   {
-    id: 11,
-    href: "#",
-    price: "140",
-    currency: 'ETH',
+    price: 140,
+    currency: "ETH",
     name: "Zip Tote Basket",
+    by: "Crazy cat",
     imageSrc:
       "https://lh3.googleusercontent.com/5Q-PY5up-tBgpW2ex6iphCqNUXwY2_1iQknhZXZB2kL1dArLJJdKGtdKoasKeYqfQZbTpP7P8oTP0LQmNfvEREzTN3jEzNj2X_Zv=w282",
   },
   {
-    id: 3,
-    href: "#",
-    price: "50",
-    currency: 'MATIC',
+    price: 50,
+    currency: "MATIC",
     name: "Nomad Pouch",
+    by: "Unicorns",
     imageSrc:
       "https://lh3.googleusercontent.com/KnOrWuzQ-O5DXfmVs87cx0QLSs5DmLq8YSIdJBdNoWaD4f9NwwvT93EYoVZ52aKYsEOglMJAz30GmqQUPBwdzkz1aSToYPquYXiITg=w282",
   },
   {
-    id: 12,
-    href: "#",
-    price: "140",
-    currency: 'ETH',
+    price: 140,
+    currency: "ETH",
     name: "Zip Tote Basket",
+    by: "Zig Zag",
     imageSrc:
       "https://lh3.googleusercontent.com/z7YfdE0pEKOQaaRxF3PHrbAGytytihibImiGTwXc9qXCDvQuCX6cl3xylNf3e2xePrSDkcyr2Sd9svBocCqLZGBfkoouJ2eDMNp-=w282",
   },
@@ -196,18 +170,18 @@ export default function Example() {
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
   return (
-    <div className="bg-slate-900 h-screen">
+    <div className="bg-slate-900 min-h-full">
       <section>
-          <div className="text-center pt-8 px-4 sm:px-6 lg:px-8">
-            <h1 className="text-4xl font-extrabold tracking-tight text-white">
-              Marketplace
-            </h1>
-            <p className="mt-4 max-w-xl mx-auto text-base text-gray-400">
-              Here you can discover different types of Collectibles, Arts,
-              Music, Videos, Photography.
-            </p>
-          </div>
-        </section>
+        <div className="text-center pt-8 px-4 sm:px-6 lg:px-8">
+          <h1 className="text-4xl font-extrabold tracking-tight text-white">
+            Marketplace
+          </h1>
+          <p className="mt-4 max-w-xl mx-auto text-base text-gray-400">
+            Here you can discover different types of Collectibles, Arts, Music,
+            Videos, Photography.
+          </p>
+        </div>
+      </section>
       <div>
         {/* Mobile filter dialog */}
         <Transition.Root show={mobileFiltersOpen} as={Fragment}>
@@ -250,9 +224,17 @@ export default function Example() {
                     >
                       {categories.map((category) => (
                         <li key={category.name}>
-                          <a href={category.href} className="block px-2 py-3">
-                            {category.name}
-                          </a>
+                          <div className="block px-2 py-3 cursor-pointer">
+                            <div
+                              className={
+                                category.active
+                                  ? "text-gray-200"
+                                  : "text-slate-500"
+                              }
+                            >
+                              {category.name}
+                            </div>
+                          </div>
                         </li>
                       ))}
                     </ul>
@@ -392,16 +374,22 @@ export default function Example() {
           </div>
 
           <section aria-labelledby="assets-heading" className="pt-6 pb-24">
-            <div className="flex flex-row flex-nowrap">
+            <div className="flex flex-row flex-nowrap justify-center">
               {/* Filters Desktop */}
               <form className="hidden lg:block w-72 mr-6">
                 <ul
                   role="list"
-                  className="text-lg font-semibold text-gray-300 space-y-4 pb-6 border-b border-gray-200"
+                  className="text-lg font-semibold cursor-pointer space-y-4 pb-6 border-b border-gray-200"
                 >
                   {categories.map((category) => (
                     <li key={category.name}>
-                      <a href={category.href}>{category.name}</a>
+                      <div
+                        className={
+                          category.active ? "text-gray-200" : "text-slate-500"
+                        }
+                      >
+                        {category.name}
+                      </div>
                     </li>
                   ))}
                 </ul>
@@ -471,23 +459,38 @@ export default function Example() {
                 className="gap-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 3xl:grid-cols-8"
               >
                 {assets.map((asset) => (
-                  <a key={asset.id} href={asset.href} className="group text-sm">
-                    <div className="rounded-lg pb-8 bg-slate-800 flex-1 flex flex-col overflow-hidden">
-                      <img
-                        className="w-full object-center object-cover scale-100 hover:scale-125 ease-in duration-300"
-                        src={asset.imageSrc}
-                        alt={asset.name}
-                      />
-                      <div className="mt-3 mx-3 bg-slate-800 relative">
-                        <h3 className="mb-2 text-gray-200 font-medium">
+                  <a key={asset.imageSrc} href={"/"} className="group text-sm">
+                    <div className="rounded-lg bg-slate-800 p-2">
+                      <div className="rounded-lg overflow-hidden">
+                        <img
+                          className="scale-100 hover:scale-110 ease-in duration-300"
+                          src={asset.imageSrc}
+                          alt={asset.name}
+                        />
+                      </div>
+                      <div className="bg-slate-800 px-2 pt-2 relative">
+                        <h3 className="text-gray-200 font-medium">
                           <dt className="sr-only">Title</dt>
                           {asset.name}
                         </h3>
-                        <dl className="flex-grow flex flex-col justify-between">
+                        <div className="flex flex-row pb-2">
+                          <h2 className="text-gray-400 pr-1 font-light text-xs">
+                            by
+                          </h2>
+                          <h3 className="text-gray-300 font-light text-xs">
+                            {asset.by}
+                          </h3>
+                        </div>
+                        <div className="flex flex-row">
+                          <img
+                            className="h-5 pr-2"
+                            src={ asset.currency === "ETH" ? EthereumIcon : PolygonIcon}
+                            alt={asset.name}
+                          />
                           <span className="text-white text-base font-medium rounded-md">
-                            {asset.price + " " + asset.currency}
+                            {asset.price}
                           </span>
-                        </dl>
+                        </div>
                       </div>
                     </div>
                   </a>

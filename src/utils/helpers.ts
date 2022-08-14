@@ -1,27 +1,14 @@
 /* eslint-disable no-unused-vars */
 import { UnsupportedChainIdError } from '@web3-react/core';
+import getRpcUrl from './getRpcUrl';
 import { ethers } from 'ethers';
-import { parseUnits } from 'ethers/lib/utils';
 import moment from 'moment';
+
+const RPC_URL = getRpcUrl();
+export const simpleRpcProvider = new ethers.providers.JsonRpcProvider(RPC_URL);
 
 export const minifyAddress = (address: string, size: number) =>
   `${address.slice(0, size || 6)}...${address.slice(-size || -4, address.length)}`;
-  
-export const metamaskDappLink = "https://metamask.app.link/dapp/192.168.18.229:3000";
-  
-export enum GAS_PRICE {
-  Default = '5',
-  Fast = '6',
-  Instant = '7',
-  Testnet = '10',
-}
-
-export const GAS_PRICE_GWEI = {
-  default: parseUnits(GAS_PRICE.Default, 'gwei').toString(),
-  fast: parseUnits(GAS_PRICE.Fast, 'gwei').toString(),
-  instant: parseUnits(GAS_PRICE.Instant, 'gwei').toString(),
-  testnet: parseUnits(GAS_PRICE.Testnet, 'gwei').toString(),
-};
 
 export const validateChain = (error: any) => {
   let supported: number[] = []
@@ -85,4 +72,15 @@ export const chainIdToName = (id: number) => {
     case id === 97:
       return 'Binance Testnet'
   }
+}
+
+// This function is used to handle the prmoises
+export const to = async (promise: Promise<any>) => {
+  return await
+    promise
+      .then((data: any) => {
+        return [null, data]
+      }).catch((err: any) => {
+        return [err]
+      });
 }

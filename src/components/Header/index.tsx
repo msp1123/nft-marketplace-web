@@ -8,8 +8,8 @@ import { BiSearchAlt } from "react-icons/bi";
 import IconButton from "../Buttons/IconButton";
 import { IoWalletOutline } from "react-icons/io5";
 import { injected } from "../../utils/connections";
-import { Login } from "../../services/ApiServices";
-import { metamaskDappLink, validateChain } from "../../utils/helpers";
+import { GetUser, Login } from "../../services/ApiServices";
+import { validateChain } from "../../utils/helpers";
 import IconTextButton from "../Buttons/IconTextButton";
 import { useCallback, useEffect, useState } from "react";
 import { getSignature, minifyAddress } from "../../utils/helpers";
@@ -17,13 +17,15 @@ import { UnsupportedChainIdError, useWeb3React } from "@web3-react/core";
 import { Popover, Transition } from "@headlessui/react";
 import NftLogo from "../../assets/Icons/unicorn-icon.webp";
 import {
-  ChartBarIcon,
   CursorClickIcon,
   HomeIcon,
   MenuIcon,
   ViewGridIcon,
   XIcon,
 } from "@heroicons/react/outline";
+import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
+import CONFIG from "../../configs/globalConfigs";
 
 const Header = () => {
   const [balance, setBalance] = useState<any>(0);
@@ -33,9 +35,11 @@ const Header = () => {
   const { account, active, error, activate, deactivate, library } =
     useWeb3React();
 
-  const connectWallet = () => {
+  let navigate = useNavigate();
+
+  const connectWallet = async () => {
     if (!window.ethereum) {
-      window.open(metamaskDappLink);
+      window.open(CONFIG.metamaskDAappLink);
     } else {
       activate(injected);
     }
@@ -54,10 +58,13 @@ const Header = () => {
     }
   }, [account, library]);
 
+  const getUser = useCallback(async () => {
+    await GetUser(account!);
+  }, [account]);
+
   const signMessage = useCallback(async () => {
     let signedValues = await getSignature(account ?? "", window);
-    let res = await Login(signedValues);
-    console.log(res);
+    await Login(signedValues);
   }, [account]);
 
   const validateNetwork = useCallback(async () => {
@@ -73,11 +80,12 @@ const Header = () => {
 
   useEffect(() => {
     if (active) {
+      getUser();
       getBalance();
       setShowWarningBanner(false);
     }
     validateNetwork();
-  }, [active, getBalance, validateNetwork]);
+  }, [active, getUser, getBalance, validateNetwork]);
 
   const navigations = [
     {
@@ -93,19 +101,19 @@ const Header = () => {
       icon: ViewGridIcon,
     },
     {
-      name: "Ranking",
-      description: "Statistics of all active NFTs.",
-      href: "/ranking",
-      icon: ChartBarIcon,
-    },
-    {
-      name: "Create",
-      description: "Create your own NFT here.",
+      name: "Mint",
+      description: "Mint your own NFT here.",
       href: "/create-nft",
       icon: CursorClickIcon,
     },
   ];
   const resources = [
+    {
+      name: "Create Collection",
+      description:
+        "Create your own collection to manage your NFTs categorised.",
+      href: "/create-collection",
+    },
     {
       name: "Help Center",
       description:
@@ -116,12 +124,6 @@ const Header = () => {
       name: "Guides",
       description:
         "Learn how to maximize our platform to get the most out of it.",
-      href: "#",
-    },
-    {
-      name: "Events",
-      description:
-        "See what meet-ups and other events we might be planning near you.",
       href: "#",
     },
     {
@@ -163,13 +165,18 @@ const Header = () => {
           </div>
           <Popover.Group as="nav" className="hidden md:flex space-x-10">
             {navigations.map((n) => (
-              <a
-                href={n.href}
+              <div
                 key={n.name}
-                className="text-base font-medium text-gray-400 hover:text-gray-200"
-              >
+                onClick={() => {
+                  if (!active) {
+                    return toast.error("Connect wallet to continue.");
+                  } else {
+                    navigate(n.href);
+                  }
+                }}
+                className="text-base font-medium text-gray-400 hover:text-gray-200 cursor-pointer">
                 {n.name}
-              </a>
+              </div>
             ))}
 
             <Popover className="relative">
@@ -260,20 +267,17 @@ const Header = () => {
                 </div>
                 <div className="mt-6">
                   <nav className="grid grid-cols-1 gap-7">
-                    {navigations.map((solution) => (
+                    {navigations.map((n) => (
                       <a
-                        key={solution.name}
-                        href={solution.href}
+                        key={n.name}
+                        href={n.href}
                         className="-m-3 p-3 flex items-center rounded-lg hover:bg-slate-800"
                       >
                         <div className="flex-shrink-0 flex items-center justify-center h-10 w-10 rounded-md bg-gray-700 text-white">
-                          <solution.icon
-                            className="h-6 w-6"
-                            aria-hidden="true"
-                          />
+                          <n.icon className="h-6 w-6" aria-hidden="true" />
                         </div>
                         <div className="ml-4 text-base font-medium text-white">
-                          {solution.name}
+                          {n.name}
                         </div>
                       </a>
                     ))}

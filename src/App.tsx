@@ -11,15 +11,16 @@ import "react-toastify/dist/ReactToastify.css";
 import "./styles/globals.sass"
 import Footer from "./components/Footer";
 import CreateCollection from "./pages/CreateCollection";
-import Ranking from "./pages/Ranking";
 import CreateNft from "./pages/CreateNft";
 import Marketplace from "./pages/Marketplace";
+import { HealthCheck } from "./services/ApiServices";
 
 function getLibrary(provider: any) {
   const library = new ethers.providers.Web3Provider(provider);
   library.pollingInterval = 12000;
   return library;
 }
+HealthCheck()
 
 function App() {
   return (
@@ -29,7 +30,6 @@ function App() {
         <Header />
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route path="/ranking" element={<Ranking />} />
           <Route path="/create-nft" element={<CreateNft />} />
           <Route path="/marketplace" element={<Marketplace />} />
           <Route path="/create-collection" element={<CreateCollection />} />

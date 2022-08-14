@@ -11,9 +11,9 @@ import PurpleNftBg from "../../assets/Images/home/nft-bg.png";
 import { IoWalletOutline } from "react-icons/io5";
 import { FaOpencart } from "react-icons/fa";
 import { MdOutlineImagesearchRoller } from "react-icons/md";
-import { metamaskDappLink } from "../../utils/helpers";
 import { useWeb3React } from "@web3-react/core";
 import { injected } from "../../utils/connections";
+import CONFIG from "../../configs/globalConfigs";
 
 const categories = [
   {
@@ -126,7 +126,7 @@ export default function Home() {
 
   const connectWallet = () => {
     if (!window.ethereum) {
-      window.open(metamaskDappLink);
+      window.open(CONFIG.metamaskDAappLink);
     } else {
       activate(injected);
     }
