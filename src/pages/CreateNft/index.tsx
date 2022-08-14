@@ -5,8 +5,16 @@ import { Listbox, Transition } from "@headlessui/react";
 import { storage } from "../../services/FirebaseServices";
 import { CheckIcon, SelectorIcon } from "@heroicons/react/solid";
 import { ref, getDownloadURL, uploadBytesResumable } from "firebase/storage";
-import { CreateToken, GetUniqueTokenId, GetUserCollections } from "../../services/ApiServices";
+import {
+  CreateToken,
+  GetSupportedNetworks,
+  GetUniqueTokenId,
+  GetUserCollections,
+} from "../../services/ApiServices";
 import CONFIG from "../../configs/globalConfigs";
+import TokenMarketJson from "../../abi/TokenMarket.json";
+import { callWithEstimateGas } from "../../hooks/Web3/estimateGas";
+import { ethers } from "ethers";
 
 export default function CreateNft() {
   const { account, active } = useWeb3React();
@@ -15,13 +23,15 @@ export default function CreateNft() {
   const [royalty, setRoyalty] = useState(0);
   const [chainId, setChainId] = useState(0);
   const [tokenId, setTokenId] = useState(0);
-  
+
   const [name, setName] = useState("");
-  // const [txHash, setTxHash] = useState("");
+  const [txHash, setTxHash] = useState("");
   const [collection, setCollection] = useState("");
   const [nftAddress, setNftAddress] = useState("");
   const [description, setDescription] = useState("");
+  const [explorerUrl, setExplorerUrl] = useState("");
   const [notifications, setNotifications] = useState<string[]>([]);
+  const [supportedNetworks, setSupportedNetworks] = useState<any[]>([]);
 
   // Helper variables
   const [buttonLabel, setButtonLabel] = useState("Create");
@@ -42,59 +52,102 @@ export default function CreateNft() {
       reader.readAsDataURL(event.target.files[0]);
     }
   };
-  
+
+  const fetchSupportedNetworks = async () => {
+    let networks = await GetSupportedNetworks();
+    if (networks && networks.length > 0) {
+      setSupportedNetworks(networks);
+    }
+  };
+
   const getTokenId = useCallback(async () => {
-    if(!chainId || !nftAddress) return;
+    if (!chainId || !nftAddress) return;
     let tokenId = await GetUniqueTokenId(chainId, nftAddress);
     if (tokenId) {
-      setTokenId(tokenId)
+      setTokenId(tokenId);
     } else {
       setButtonLabel("Failed");
       setIsButtonClicked(false);
     }
-    console.log(tokenId);
-    
   }, [chainId, nftAddress]);
-  
+
   const fetchCollections = useCallback(async () => {
     if (!account) return toast.error("Connect wallet to continue");
     let collectionsT = await GetUserCollections(account!, "trim=true");
     if (collectionsT) {
       setCollections(collectionsT);
-      setChainId(collectionsT[0].chainId)
-      setNftAddress(collectionsT[0].address)
-      setCollection(collectionsT[0].name)
+      setChainId(collectionsT[0].chainId);
+      setNftAddress(collectionsT[0].address);
+      setCollection(collectionsT[0].name);
       getTokenId();
     }
   }, [account, getTokenId]);
-  
+
   const onCollectionChange = async (name: any) => {
-    let collectionT = collections?.find(c => c.name === name);
-    if(collectionT){
+    let collectionT = collections?.find((c) => c.name === name);
+    if (collectionT) {
       setChainId(collectionT.chainId);
       setNftAddress(collectionT.address);
       setCollection(name);
       getTokenId();
     }
-  }
-  
-  const handleNotifications = (e: any) => {
-    const name = e.target.getAttribute("name")
-    let element = document.getElementById(name) as HTMLInputElement;
-    if(element.checked){
-      setNotifications([...notifications!, name])
-    }else{
-      setNotifications(notifications?.filter(n => n !== name))
-    }
-  }
+  };
 
-  const uploadImage = async () => {
+  const handleNotifications = (e: any) => {
+    const name = e.target.getAttribute("name");
+    let element = document.getElementById(name) as HTMLInputElement;
+    if (element.checked) {
+      setNotifications([...notifications!, name]);
+    } else {
+      setNotifications(notifications?.filter((n) => n !== name));
+    }
+  };
+
+  const mintToken = async () => {
+    setButtonLabel("Minting");
+    let provider = new ethers.providers.Web3Provider(window.ethereum);
+    let network = supportedNetworks.find((n) => n.chainId === chainId);
+
+    if (!network) {
+      setButtonDefaults();
+      return toast.error("Selected network is not available.");
+    }
+    setExplorerUrl(network.explorerUrl);
+    let marketAddress = network.marketContractAddress;
+    let activeNetwork = await provider.getNetwork();
+    let signer = provider.getSigner();
+
+    if (activeNetwork.chainId !== chainId) {
+      setButtonDefaults();
+      return toast.error(`Please connect to ${network.displayName}`);
+    }
+
+    let contract = new ethers.Contract(
+      marketAddress,
+      TokenMarketJson.abi,
+      signer
+    );
+    let tx = await callWithEstimateGas(contract, "mintToken", [
+      tokenId,
+      royalty,
+      supply,
+    ]);
+    setTxHash(tx.hash);
+    uploadImage(tx.hash);
+    toast.promise(tx.wait(), {
+      pending: "Transaction is processing.",
+      success: "Token Minted successfully.",
+      error: "Failed to Mint Token.",
+    });
+  };
+
+  const uploadImage = async (txHash: string) => {
     let fileType = imageFile.type.split("/")[1];
     let fileName = "TKN-" + tokenId;
 
     const storageRef = ref(
       storage,
-      `${account}/${nftAddress}/${fileName}.${fileType}`
+      `${account}/token/${nftAddress}/${fileName}.${fileType}`
     );
     const uploadTask = uploadBytesResumable(storageRef, imageFile);
 
@@ -113,24 +166,28 @@ export default function CreateNft() {
       },
       () => {
         getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
-          createToken(downloadURL);
+          createToken(downloadURL, txHash);
         });
       }
     );
   };
 
-  const createToken = async (imageUrl: string) => {
+  const createToken = async (imageUrl: string, txHash: string) => {
     setButtonLabel("Creating");
     let input = {
       name: name,
       image: imageUrl,
+      txHash: txHash,
+      tokenId: tokenId,
       description: description,
+      collectionName: collection,
+      amount: parseInt(supply.toString()),
+      royalty: parseInt(royalty.toString()),
     };
 
-    let collection = await CreateToken(input);
-    if (collection) {
+    let token = await CreateToken(input);
+    if (token) {
       setButtonLabel("Created");
-      window.location.reload();
     } else {
       setButtonLabel("Failed");
       setIsButtonClicked(false);
@@ -138,33 +195,51 @@ export default function CreateNft() {
   };
 
   const validateForm = () => {
-    setButtonLabel("Creating");
+    setButtonLabel("Validating");
     setIsButtonClicked(true);
     let authToken = localStorage.getItem(CONFIG.authTokenStorageKey);
     if (!authToken) {
-      setButtonLabel("Create");
-      setIsButtonClicked(false);
+      setButtonDefaults();
       return toast.error("Session expired. Please login.");
     }
     if (!imageFile) {
-      setButtonLabel("Create");
-      setIsButtonClicked(false);
+      setButtonDefaults();
       return toast.error("No image selected.");
     }
     if (!account) {
-      setButtonLabel("Create");
-      setIsButtonClicked(false);
+      setButtonDefaults();
       return toast.error("Connect wallet before continue");
     }
     if (!name) {
-      setButtonLabel("Create");
-      setIsButtonClicked(false);
-      return toast.error("Collection name is required.");
+      setButtonDefaults();
+      return toast.error("Token name is required.");
     }
-    uploadImage();
+    if (!supply || supply <= 0) {
+      setButtonDefaults();
+      return toast.error("Invalid token supply.");
+    }
+    if (!tokenId) {
+      setButtonDefaults();
+      return toast.error("Invalid token metadata. Please try again later.");
+    }
+    if (royalty > 10) {
+      setButtonDefaults();
+      return toast.error("Royalty should be less than 10.");
+    }
+    if (!collection) {
+      setButtonDefaults();
+      return toast.error("Collection is mandatory.");
+    }
+    mintToken();
+  };
+
+  const setButtonDefaults = () => {
+    setButtonLabel("Create");
+    setIsButtonClicked(false);
   };
 
   useEffect(() => {
+    fetchSupportedNetworks();
     if (active) fetchCollections();
   }, [active, fetchCollections]);
 
@@ -506,7 +581,26 @@ export default function CreateNft() {
           </div>
         </div>
 
-        <div className="py-8">
+        <div className="pb-8 pt-3">
+          {txHash && (
+            <div className="pb-4 flex justify-center text-center">
+              <p className="text-purple-600 pr-2">
+                Transaction has been submitted.
+              </p>
+              <div
+                onClick={() => {
+                  window.open(
+                    `${explorerUrl}/tx/${txHash}`,
+                    "_blank",
+                    "noopener,noreferrer"
+                  );
+                }}
+                className="cursor-pointer underline text-pink-600"
+              >
+                check
+              </div>
+            </div>
+          )}
           <div className="flex justify-end">
             <button
               type="button"

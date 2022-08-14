@@ -7,7 +7,7 @@ import {
 } from '@web3-react/injected-connector';
 
 declare let window: any;
-export const injected = new InjectedConnector({ supportedChainIds: [4] });
+export const injected = new InjectedConnector({ supportedChainIds: [4, 80001] });
 
 export function getErrorMessage(error: Error) {
   if (error instanceof NoEthereumProviderError) {

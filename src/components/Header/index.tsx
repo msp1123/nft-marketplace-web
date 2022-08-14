@@ -168,7 +168,7 @@ const Header = () => {
               <div
                 key={n.name}
                 onClick={() => {
-                  if (!active) {
+                  if (!active && n.name === "Mint") {
                     return toast.error("Connect wallet to continue.");
                   } else {
                     navigate(n.href);
