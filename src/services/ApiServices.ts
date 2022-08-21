@@ -145,6 +145,24 @@ export async function CreateToken(body: Object) {
     }
 }
 
+export async function GetAllTokens(query: string) {
+    let res = await fetch(`/v1/token/fetchAll${query}`, {
+        method: 'GET'
+    })
+    try {
+        var resJson = await res.json();
+    } catch (error) {
+        toast.error("Something went wrong.")
+        return
+    }
+
+    if (resJson.success) {
+        return resJson.tokens;
+    } else {
+        toast.error(resJson.message ?? "Something went wrong.")
+    }
+}
+
 export async function GetUniqueTokenId(chainId: number, nftAddress: string) {
     let res = await fetch(`/v1/token/getTokenId/${chainId}/${nftAddress}`, {
         method: 'GET'

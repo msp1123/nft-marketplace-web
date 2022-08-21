@@ -14,6 +14,7 @@ import CreateCollection from "./pages/CreateCollection";
 import CreateNft from "./pages/CreateNft";
 import Marketplace from "./pages/Marketplace";
 import { HealthCheck } from "./services/ApiServices";
+import ContactUs from "./pages/ContactUs";
 
 function getLibrary(provider: any) {
   const library = new ethers.providers.Web3Provider(provider);
@@ -30,6 +31,7 @@ function App() {
         <Header />
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/contactus" element={<ContactUs />} />
           <Route path="/create-nft" element={<CreateNft />} />
           <Route path="/marketplace" element={<Marketplace />} />
           <Route path="/create-collection" element={<CreateCollection />} />

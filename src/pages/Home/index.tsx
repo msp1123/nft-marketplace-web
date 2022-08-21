@@ -318,12 +318,11 @@ export default function Home() {
                   distinguish them from each other. Unlike cryptocurrencies,
                   they cannot be traded or exchanged at equivalency.
                 </p>
-                <a
-                  href="#"
+                <button
                   className="mt-8 w-full block border-transparent rounded-md py-3 px-8 text-base font-medium bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white hover:bg-pink-600 sm:w-auto"
                 >
                   Mint now
-                </a>
+                </button>
               </div>
             </div>
           </div>

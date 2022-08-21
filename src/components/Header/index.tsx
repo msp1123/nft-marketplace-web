@@ -8,7 +8,7 @@ import { BiSearchAlt } from "react-icons/bi";
 import IconButton from "../Buttons/IconButton";
 import { IoWalletOutline } from "react-icons/io5";
 import { injected } from "../../utils/connections";
-import { GetUser, Login } from "../../services/ApiServices";
+import { GetSupportedNetworks, GetUser, Login } from "../../services/ApiServices";
 import { validateChain } from "../../utils/helpers";
 import IconTextButton from "../Buttons/IconTextButton";
 import { useCallback, useEffect, useState } from "react";
@@ -26,8 +26,13 @@ import {
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import CONFIG from "../../configs/globalConfigs";
+import { useDispatch } from "react-redux";
+import { setSupportedNetworks } from "../../redux/common/actions";
+import { setUser } from "../../redux/users/actions";
 
 const Header = () => {
+  const dispatch = useDispatch();
+  
   const [balance, setBalance] = useState<any>(0);
   const [supportedChain, setSupportedChain] = React.useState("");
   const [unSupportedChain, setUnSupportedChain] = React.useState("");
@@ -59,13 +64,15 @@ const Header = () => {
   }, [account, library]);
 
   const getUser = useCallback(async () => {
-    await GetUser(account!);
-  }, [account]);
+    let user = await GetUser(account!);
+    if(user) dispatch(setUser(user));
+  }, [account, dispatch]);
 
   const signMessage = useCallback(async () => {
     let signedValues = await getSignature(account ?? "", window);
-    await Login(signedValues);
-  }, [account]);
+    let user = await Login(signedValues);
+    if(user) dispatch(setUser(user));
+  }, [account, dispatch]);
 
   const validateNetwork = useCallback(async () => {
     if (error instanceof UnsupportedChainIdError) {
@@ -77,6 +84,13 @@ const Header = () => {
       setShowWarningBanner(true);
     }
   }, [error]);
+  
+  const fetchSupportedNetworks = useCallback(async () => {
+    let networks = await GetSupportedNetworks();
+    if (networks && networks.length > 0) {
+      dispatch(setSupportedNetworks(networks))
+    }
+  }, [dispatch]);
 
   useEffect(() => {
     if (active) {
@@ -85,7 +99,8 @@ const Header = () => {
       setShowWarningBanner(false);
     }
     validateNetwork();
-  }, [active, getUser, getBalance, validateNetwork]);
+    fetchSupportedNetworks();
+  }, [active, getUser, getBalance, validateNetwork, fetchSupportedNetworks]);
 
   const navigations = [
     {
@@ -147,7 +162,7 @@ const Header = () => {
       />
       <Popover className="relative bg-gray-900">
         <div className="flex justify-between items-center px-4 py-6 sm:px-6 md:justify-start md:space-x-10">
-          <div className="flex content-center text-center lg:w-0 lg:flex-1">
+          <div className="flex content-center cursor-pointer text-center lg:w-0 lg:flex-1" >
             <img
               className="inline-block pr-2 w-auto h-12 sm:h-16"
               src={NftLogo}
