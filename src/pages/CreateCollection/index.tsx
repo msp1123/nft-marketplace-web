@@ -1,21 +1,22 @@
 import { storage } from "../../services/FirebaseServices";
-import { Fragment, useEffect, useState } from "react";
+import { Fragment, useCallback, useEffect, useState } from "react";
 import { Listbox, Transition } from "@headlessui/react";
 import { CheckIcon, SelectorIcon } from "@heroicons/react/solid";
 import { ref, getDownloadURL, uploadBytesResumable } from "firebase/storage";
 import {
   CreateNewCollection,
   GetNftCategories,
-  GetSupportedNetworks,
   VerifyCollectionName,
 } from "../../services/ApiServices";
 import { useWeb3React } from "@web3-react/core";
 import { toast } from "react-toastify";
 import moment from "moment";
 import CONFIG from "../../configs/globalConfigs";
+import { useSelector } from "react-redux";
 
 export default function CreateCollection() {
   const { account } = useWeb3React();
+  const commonInfo = useSelector((state: any) => state?.commonInfo);
 
   // Form variables
   const [name, setName] = useState<string>("");
@@ -47,8 +48,8 @@ export default function CreateCollection() {
     }
   };
 
-  const fetchDefaults = async () => {
-    let networks = await GetSupportedNetworks();
+  const fetchDefaults = useCallback(async () => {
+    let networks = await commonInfo.networks;
     let categories = await GetNftCategories();
 
     if (networks && networks.length > 0) {
@@ -60,7 +61,7 @@ export default function CreateCollection() {
       setCategory(categories[0]);
       setCategories(categories.map((category: any) => category));
     }
-  };
+  }, [commonInfo]);
 
   const verifyName = async (name: any) => {
     setNameValidation("verifying...");
@@ -137,7 +138,8 @@ export default function CreateCollection() {
     setButtonLabel("Creating");
     setIsButtonClicked(true);
     let authToken = localStorage.getItem(CONFIG.authTokenStorageKey);
-    if (!authToken) {
+    let loggedInUser = localStorage.getItem(CONFIG.authLoggedInUser);
+    if (!authToken || loggedInUser !== account) {
       setButtonLabel("Create");
       setIsButtonClicked(false);
       return toast.error("Session expired. Please login.");
@@ -161,8 +163,10 @@ export default function CreateCollection() {
   };
 
   useEffect(() => {
-    fetchDefaults();
-  }, []);
+    if(commonInfo) {
+      fetchDefaults()
+    }
+  }, [commonInfo, fetchDefaults]);
 
   return (
     <div className="flex justify-center bg-slate-900 pt-12 px-4 min-h-full">

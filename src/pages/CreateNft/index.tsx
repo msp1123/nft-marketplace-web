@@ -1,3 +1,4 @@
+/* eslint-disable react/jsx-no-target-blank */
 import { toast } from "react-toastify";
 import { useWeb3React } from "@web3-react/core";
 import { Fragment, useCallback, useEffect, useState } from "react";
@@ -31,6 +32,7 @@ export default function CreateNft() {
   const [description, setDescription] = useState("");
   const [explorerUrl, setExplorerUrl] = useState("");
   const [notifications, setNotifications] = useState<string[]>([]);
+  const [isCollectionSet, setIsCollectionSet] = useState<boolean>(false);
   const [supportedNetworks, setSupportedNetworks] = useState<any[]>([]);
 
   // Helper variables
@@ -76,12 +78,15 @@ export default function CreateNft() {
     let collectionsT = await GetUserCollections(account!, "trim=true");
     if (collectionsT) {
       setCollections(collectionsT);
-      setChainId(collectionsT[0].chainId);
-      setNftAddress(collectionsT[0].address);
-      setCollection(collectionsT[0].name);
+      if (!isCollectionSet) {
+        setChainId(collectionsT[0].chainId);
+        setNftAddress(collectionsT[0].address);
+        setCollection(collectionsT[0].name)
+      };
+      setIsCollectionSet(true);
       getTokenId();
     }
-  }, [account, getTokenId]);
+  }, [account, isCollectionSet, getTokenId]);
 
   const onCollectionChange = async (name: any) => {
     let collectionT = collections?.find((c) => c.name === name);
@@ -127,11 +132,16 @@ export default function CreateNft() {
       TokenMarketJson.abi,
       signer
     );
-    let tx = await callWithEstimateGas(contract, "mintToken", [
-      tokenId,
-      royalty,
-      supply,
-    ]);
+    try {
+      var tx = await callWithEstimateGas(contract, "mintToken", [
+        tokenId,
+        royalty,
+        supply,
+      ]);
+    } catch (error) {
+      setButtonDefaults();
+      return toast.error("Transaction failed!.")
+    };
     setTxHash(tx.hash);
     uploadImage(tx.hash);
     toast.promise(tx.wait(), {
@@ -198,7 +208,12 @@ export default function CreateNft() {
     setButtonLabel("Validating");
     setIsButtonClicked(true);
     let authToken = localStorage.getItem(CONFIG.authTokenStorageKey);
-    if (!authToken) {
+    let loggedInUser = localStorage.getItem(CONFIG.authLoggedInUser);
+    if (loggedInUser !== account) {
+      setIsCollectionSet(false);
+      fetchCollections();
+    }
+    if (!authToken || loggedInUser !== account) {
       setButtonDefaults();
       return toast.error("Session expired. Please login.");
     }
@@ -240,8 +255,10 @@ export default function CreateNft() {
 
   useEffect(() => {
     fetchSupportedNetworks();
-    if (active) fetchCollections();
-  }, [active, fetchCollections]);
+    if (active) {
+      fetchCollections();
+    }
+  }, [active, isCollectionSet, fetchCollections]);
 
   return (
     <div className="flex justify-center bg-slate-900 pt-8 px-4 min-h-full">
@@ -587,18 +604,12 @@ export default function CreateNft() {
               <p className="text-purple-600 pr-2">
                 Transaction has been submitted.
               </p>
-              <div
-                onClick={() => {
-                  window.open(
-                    `${explorerUrl}/tx/${txHash}`,
-                    "_blank",
-                    "noopener,noreferrer"
-                  );
-                }}
+              <a
+                href={`${explorerUrl}/tx/${txHash}`} target="_blank"
                 className="cursor-pointer underline text-pink-600"
               >
                 check
-              </div>
+              </a>
             </div>
           )}
           <div className="flex justify-end">

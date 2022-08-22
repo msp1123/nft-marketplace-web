@@ -10,7 +10,7 @@ export default function TokenCard({token}: TokenProps) {
     
   return (
       <div key={token.tokenId} className="rounded-lg bg-slate-800 p-2">
-        <div className="rounded-lg overflow-hidden">
+        <div className="rounded-lg justify-between overflow-hidden">
           <img
             className="scale-100 hover:scale-110 ease-in duration-300"
             src={token.image}
@@ -29,7 +29,7 @@ export default function TokenCard({token}: TokenProps) {
           <div className="flex flex-row">
             <img
               className="h-5 pr-2"
-              src={token.chainId === 4 || 1 ? EthereumIcon : PolygonIcon}
+              src={token.chainId === 4 ? EthereumIcon : PolygonIcon}
               alt={token.name}
             />
             <span className="text-white text-base font-medium rounded-md">

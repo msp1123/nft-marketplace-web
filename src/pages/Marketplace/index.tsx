@@ -334,7 +334,7 @@ export default function Marketplace() {
           role="list"
           className="gap-4 grid grid-cols-1 group px-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 3xl:grid-cols-7"
         >
-          {allTokensState.tokens ? (
+          {allTokensState.tokens && allTokensState.tokens.length > 0 ? (
             allTokensState.tokens.map((token: TokenModel) => (
               <TokenCard token={token} />
             ))

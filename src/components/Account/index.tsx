@@ -2,7 +2,7 @@ import { FaRegUser } from "react-icons/fa";
 import { FaTelegramPlane } from "react-icons/fa";
 import { BiSearchAlt } from "react-icons/bi";
 import { useWeb3React } from "@web3-react/core";
-import { getSignature, minifyAddress } from "../../utils/helpers";
+import { minifyAddress } from "../../utils/helpers";
 import IconTextButton from "../Buttons/IconTextButton";
 import IconButton from "../Buttons/IconButton";
 import { useCallback, useEffect, useState } from "react";
@@ -10,10 +10,14 @@ import { injected } from "../../utils/connections";
 import { utils } from "ethers";
 import { IoWalletOutline } from "react-icons/io5";
 import { Login } from "../../services/ApiServices";
+import { loginWithSignature } from "../../hooks/Web3/signatures";
+import { useDispatch } from "react-redux";
+import { setUser } from "../../redux/users/actions";
 
 const Account = () => {
   const { account, active, activate, deactivate, library } = useWeb3React();
   const [balance, setBalance] = useState<any>(0);
+  const dispatch = useDispatch();
 
   const connectMetamask = () => {
     activate(injected);
@@ -38,9 +42,10 @@ const Account = () => {
   }, [active, getBalance]);
   
   const signMessage = useCallback(async () => {
-    let signedValues = await getSignature(account ?? "", window);
-    await Login(signedValues);
-  }, [account])
+    let signedValues = await loginWithSignature(account ?? "", window);
+    let user = await Login(signedValues);
+    if(user) dispatch(setUser(user));
+  }, [account, dispatch])
 
   return (
     <div style={{ display: "flex" }}>

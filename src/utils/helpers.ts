@@ -2,7 +2,6 @@
 import { UnsupportedChainIdError } from '@web3-react/core';
 import getRpcUrl from './getRpcUrl';
 import { ethers } from 'ethers';
-import moment from 'moment';
 
 const RPC_URL = getRpcUrl();
 export const simpleRpcProvider = new ethers.providers.JsonRpcProvider(RPC_URL);
@@ -42,19 +41,6 @@ export const validateChain = (error: any) => {
     supportedChains: supportedChains,
     unSupportedChain: unSupportedChain
   }
-}
-
-export const getSignature = async (address: String, window: any) => {
-  let time = moment().utc().startOf('day').unix();
-  let timeHash = ethers.utils.solidityKeccak256(['uint'], [time])
-  let message = `Hello! Welcome to NFT Marketplace
-  
-  This request is only to verify your address with us and this will not trigger a blockchain transaction.
-  
-  Hash: ${timeHash}`
-  const provider = new ethers.providers.Web3Provider(window.ethereum);
-  const signer = provider.getSigner();
-  return { address: address, message: message, signature: await signer.signMessage(message) }
 }
 
 export const chainIdToName = (id: number) => {

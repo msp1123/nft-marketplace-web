@@ -8,11 +8,11 @@ import { BiSearchAlt } from "react-icons/bi";
 import IconButton from "../Buttons/IconButton";
 import { IoWalletOutline } from "react-icons/io5";
 import { injected } from "../../utils/connections";
-import { GetSupportedNetworks, GetUser, Login } from "../../services/ApiServices";
+import { GetSupportedNetworks, GetUser } from "../../services/ApiServices";
 import { validateChain } from "../../utils/helpers";
 import IconTextButton from "../Buttons/IconTextButton";
 import { useCallback, useEffect, useState } from "react";
-import { getSignature, minifyAddress } from "../../utils/helpers";
+import { minifyAddress } from "../../utils/helpers";
 import { UnsupportedChainIdError, useWeb3React } from "@web3-react/core";
 import { Popover, Transition } from "@headlessui/react";
 import NftLogo from "../../assets/Icons/unicorn-icon.webp";
@@ -29,11 +29,13 @@ import CONFIG from "../../configs/globalConfigs";
 import { useDispatch } from "react-redux";
 import { setSupportedNetworks } from "../../redux/common/actions";
 import { setUser } from "../../redux/users/actions";
+import { loginWithSignature } from "../../hooks/Web3/signatures";
 
 const Header = () => {
   const dispatch = useDispatch();
-  
+
   const [balance, setBalance] = useState<any>(0);
+  const [loggedInUser, setLoggedInUser] = useState<string>();
   const [supportedChain, setSupportedChain] = React.useState("");
   const [unSupportedChain, setUnSupportedChain] = React.useState("");
   const [showWarningBanner, setShowWarningBanner] = React.useState(false);
@@ -48,6 +50,14 @@ const Header = () => {
     } else {
       activate(injected);
     }
+    let address = localStorage.getItem(CONFIG.authLoggedInUser)
+    setLoggedInUser(address!);
+  };
+
+  const login = async () => {
+    await loginWithSignature(account!, window);
+    let address = localStorage.getItem(CONFIG.authLoggedInUser)
+    setLoggedInUser(address!);
   };
 
   const getBalance = useCallback(async () => {
@@ -65,13 +75,7 @@ const Header = () => {
 
   const getUser = useCallback(async () => {
     let user = await GetUser(account!);
-    if(user) dispatch(setUser(user));
-  }, [account, dispatch]);
-
-  const signMessage = useCallback(async () => {
-    let signedValues = await getSignature(account ?? "", window);
-    let user = await Login(signedValues);
-    if(user) dispatch(setUser(user));
+    if (user) dispatch(setUser(user));
   }, [account, dispatch]);
 
   const validateNetwork = useCallback(async () => {
@@ -84,11 +88,11 @@ const Header = () => {
       setShowWarningBanner(true);
     }
   }, [error]);
-  
+
   const fetchSupportedNetworks = useCallback(async () => {
     let networks = await GetSupportedNetworks();
     if (networks && networks.length > 0) {
-      dispatch(setSupportedNetworks(networks))
+      dispatch(setSupportedNetworks(networks));
     }
   }, [dispatch]);
 
@@ -162,7 +166,7 @@ const Header = () => {
       />
       <Popover className="relative bg-gray-900">
         <div className="flex justify-between items-center px-4 py-6 sm:px-6 md:justify-start md:space-x-10">
-          <div className="flex content-center cursor-pointer text-center lg:w-0 lg:flex-1" >
+          <div className="flex content-center cursor-pointer text-center lg:w-0 lg:flex-1">
             <img
               className="inline-block pr-2 w-auto h-12 sm:h-16"
               src={NftLogo}
@@ -189,7 +193,8 @@ const Header = () => {
                     navigate(n.href);
                   }
                 }}
-                className="text-base font-medium text-gray-400 hover:text-gray-200 cursor-pointer">
+                className="text-base font-medium text-gray-400 hover:text-gray-200 cursor-pointer"
+              >
                 {n.name}
               </div>
             ))}
@@ -240,10 +245,14 @@ const Header = () => {
           <div className="hidden md:flex items-center justify-end md:flex-1 lg:w-0">
             <IconButton icon={<BiSearchAlt size={26} />} onClick={() => {}} />
             <IconTextButton
-              label={active ? balance + " ETH" : ""}
+              label={
+                active && loggedInUser === account
+                  ? balance + " ETH"
+                  : "Sign In"
+              }
               icon={<FaRegUser size={20} />}
               showText={active}
-              onClick={() => (account ? signMessage() : connectWallet())}
+              onClick={() => (account ? login() : connectWallet())}
             />
             <IconTextButton
               label={active ? minifyAddress(account ?? "", 5) : "CONNECT"}
@@ -302,10 +311,14 @@ const Header = () => {
               <div className="px-1 py-4">
                 <div className="flex grid-cols-2 justify-between">
                   <IconTextButton
-                    label={active ? balance + " ETH" : "Sign In"}
+                    label={
+                      active && loggedInUser === account
+                        ? balance + " ETH"
+                        : "Sign In"
+                    }
                     icon={<FaRegUser size={20} />}
                     showText={true}
-                    onClick={() => (account ? signMessage() : connectWallet())}
+                    onClick={() => (account ? login() : connectWallet())}
                   />
                   <IconTextButton
                     label={active ? minifyAddress(account ?? "", 5) : "CONNECT"}

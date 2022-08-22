@@ -45,6 +45,7 @@ export async function Login(credentials: Object) {
     if (resJson.success) {
         toast.success(resJson.message)
         localStorage.setItem(CONFIG.authTokenStorageKey, resJson.token)
+        localStorage.setItem(CONFIG.authLoggedInUser, resJson.user.address)
         return resJson.user;
     } else {
         toast.error(resJson.message ?? "Something went wrong.")
