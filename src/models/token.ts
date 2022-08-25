@@ -18,5 +18,6 @@ export type TokenModel = {
     attributes: any[];
     createdAt: Date;
     updatedAt: Date;
+    tokenPrice: number,
     __v: number;
 }
