@@ -8,7 +8,6 @@ import { CheckIcon, SelectorIcon } from "@heroicons/react/solid";
 import { ref, getDownloadURL, uploadBytesResumable } from "firebase/storage";
 import {
   CreateToken,
-  GetSupportedNetworks,
   GetUniqueTokenId,
   GetUserCollections,
 } from "../../services/ApiServices";
@@ -16,9 +15,11 @@ import CONFIG from "../../configs/globalConfigs";
 import TokenMarketJson from "../../abi/TokenMarket.json";
 import { callWithEstimateGas } from "../../hooks/Web3/estimateGas";
 import { ethers } from "ethers";
+import { useSelector } from "react-redux";
 
 export default function CreateNft() {
   const { account, active } = useWeb3React();
+  const commonInfo = useSelector((state: any) => state?.commonInfo);
 
   const [supply, setSupply] = useState(5);
   const [royalty, setRoyalty] = useState(0);
@@ -55,12 +56,12 @@ export default function CreateNft() {
     }
   };
 
-  const fetchSupportedNetworks = async () => {
-    let networks = await GetSupportedNetworks();
+  const fetchSupportedNetworks =  useCallback(async () => {
+    let networks = await commonInfo.networks;
     if (networks && networks.length > 0) {
       setSupportedNetworks(networks);
     }
-  };
+  }, [commonInfo]);
 
   const getTokenId = useCallback(async () => {
     if (!chainId || !nftAddress) return;
@@ -258,7 +259,7 @@ export default function CreateNft() {
     if (active) {
       fetchCollections();
     }
-  }, [active, isCollectionSet, fetchCollections]);
+  }, [active, isCollectionSet, fetchCollections, fetchSupportedNetworks]);
 
   return (
     <div className="flex justify-center bg-slate-900 pt-8 px-4 min-h-full">

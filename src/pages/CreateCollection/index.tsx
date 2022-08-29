@@ -7,6 +7,7 @@ import {
   CreateNewCollection,
   GetNftCategories,
   VerifyCollectionName,
+  VerifyCollectionUrl,
 } from "../../services/ApiServices";
 import { useWeb3React } from "@web3-react/core";
 import { toast } from "react-toastify";
@@ -20,6 +21,7 @@ export default function CreateCollection() {
 
   // Form variables
   const [name, setName] = useState<string>("");
+  const [url, setUrl] = useState<string>("");
   const [chain, setChain] = useState<string>("");
   const [category, setCategory] = useState<string>();
   const [description, setDescription] = useState<string>("");
@@ -31,18 +33,34 @@ export default function CreateCollection() {
   const [isButtonClicked, setIsButtonClicked] = useState(false);
 
   // Temp variables
-  const [imageFile, setImageFile] = useState<any>();
   const [allChains, setAllChains] = useState<any[]>();
-  const [imagePreview, setImagePreview] = useState<any>();
+  const [urlValidation, setUrlValidation] = useState("");
   const [nameValidation, setNameValidation] = useState("");
+  const [isUrlAvailable, setIsUrlAvailable] = useState(false);
   const [isNameAvailable, setIsNameAvailable] = useState(false);
 
-  const onImageChange = (event: any) => {
+  const [bannerImageFile, setBannerImageFile] = useState<any>();
+  const [profileImageFile, setProfileImageFile] = useState<any>();
+  const [bannerImagePreview, setBannerImagePreview] = useState<any>();
+  const [profileImagePreview, setProfileImagePreview] = useState<any>();
+
+  const onProfileImageChange = (event: any) => {
     if (event.target.files && event.target.files[0]) {
-      setImageFile(event.target.files[0]);
+      setProfileImageFile(event.target.files[0]);
       let reader = new FileReader();
       reader.onload = (e) => {
-        setImagePreview(e.target?.result);
+        setProfileImagePreview(e.target?.result);
+      };
+      reader.readAsDataURL(event.target.files[0]);
+    }
+  };
+
+  const onBannerImageChange = (event: any) => {
+    if (event.target.files && event.target.files[0]) {
+      setBannerImageFile(event.target.files[0]);
+      let reader = new FileReader();
+      reader.onload = (e) => {
+        setBannerImagePreview(e.target?.result);
       };
       reader.readAsDataURL(event.target.files[0]);
     }
@@ -74,21 +92,38 @@ export default function CreateCollection() {
     if (response.success) {
       setNameValidation(response.message);
       setIsNameAvailable(true);
-      setName(name);
+      setName(response.name);
     } else {
       setNameValidation(response.message);
     }
   };
 
-  const uploadImage = async () => {
-    let fileType = imageFile.type.split("/")[1];
-    let fileName = "CLN-" + moment().utc().format();
+  const verifyUrl = async (url: any) => {
+    setUrlValidation("verifying...");
+    setIsUrlAvailable(false);
+    var response = await VerifyCollectionUrl(url);
+    if (!response) {
+      setUrlValidation("Something went wrong. Please contact support.");
+      return;
+    }
+    if (response.success) {
+      setUrlValidation(response.message);
+      setIsUrlAvailable(true);
+      setUrl(response.url);
+    } else {
+      setUrlValidation(response.message);
+    }
+  };
+
+  const uploadProfile = async () => {
+    let fileType = profileImageFile.type.split("/")[1];
+    let fileName = "CLN-PROFILE-" + moment().utc().valueOf();
 
     const storageRef = ref(
       storage,
       `${account}/collection/${fileName}.${fileType}`
     );
-    const uploadTask = uploadBytesResumable(storageRef, imageFile);
+    const uploadTask = uploadBytesResumable(storageRef, profileImageFile);
 
     uploadTask.on(
       "state_changed",
@@ -104,23 +139,59 @@ export default function CreateCollection() {
         toast.error("Image upload failed!.");
       },
       () => {
-        getDownloadURL(uploadTask.snapshot.ref)
-        .then((downloadURL) => {
-          createCollection(downloadURL);
+        getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
+          if (bannerImageFile) {
+            uploadBanner(downloadURL);
+          } else {
+            createCollection(downloadURL, "");
+          }
         });
       }
     );
   };
 
-  const createCollection = async (imageUrl: string) => {
+  const uploadBanner = async (profileUrl: string) => {
+    let fileType = bannerImageFile.type.split("/")[1];
+    let fileName = "CLN-BANNER-" + moment().utc().valueOf();
+
+    const storageRef = ref(
+      storage,
+      `${account}/collection/${fileName}.${fileType}`
+    );
+    const uploadTask = uploadBytesResumable(storageRef, bannerImageFile);
+
+    uploadTask.on(
+      "state_changed",
+      (snapshot) => {
+        const progress = Math.round(
+          (snapshot.bytesTransferred / snapshot.totalBytes) * 100
+        );
+        setButtonLabel(`Uploading ${progress}%`);
+      },
+      (error) => {
+        setButtonLabel("Failed");
+        setIsButtonClicked(false);
+        toast.error("Image upload failed!.");
+      },
+      () => {
+        getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
+          createCollection(profileUrl, downloadURL);
+        });
+      }
+    );
+  };
+
+  const createCollection = async (profileUrl: string, bannerUrl: string) => {
     setButtonLabel("Creating");
     let chainT = allChains?.find((c) => c.displayName === chain);
     let input = {
+      url: url,
       name: name,
-      image: imageUrl,
       category: category,
-      description: description,
+      bannerImage: bannerUrl,
       chainId: chainT.chainId,
+      description: description,
+      profileImage: profileUrl,
       address: chainT.nftContractAddress,
     };
 
@@ -144,7 +215,7 @@ export default function CreateCollection() {
       setIsButtonClicked(false);
       return toast.error("Session expired. Please login.");
     }
-    if (!imageFile) {
+    if (!profileImageFile) {
       setButtonLabel("Create");
       setIsButtonClicked(false);
       return toast.error("No image selected.");
@@ -154,17 +225,22 @@ export default function CreateCollection() {
       setIsButtonClicked(false);
       return toast.error("Connect wallet before continue");
     }
+    if (!url) {
+      setButtonLabel("Create");
+      setIsButtonClicked(false);
+      return toast.error("Collection url is required.");
+    }
     if (!name) {
       setButtonLabel("Create");
       setIsButtonClicked(false);
       return toast.error("Collection name is required.");
     }
-    uploadImage();
+    uploadProfile();
   };
 
   useEffect(() => {
-    if(commonInfo) {
-      fetchDefaults()
+    if (commonInfo) {
+      fetchDefaults();
     }
   }, [commonInfo, fetchDefaults]);
 
@@ -182,11 +258,11 @@ export default function CreateCollection() {
                 you share.
               </p>
             </div>
-            {imagePreview ? (
+            {profileImagePreview && (
               <div className="sm:col-span-6 mt-6 flex flex-shrink-0 items-baseline justify-start">
                 <div className="rounded-lg w-auto bg-slate-800 px-2 pt-2 pb-4">
                   <div className="rounded-lg overflow-hidden max-h-96 max-w-xs">
-                    <img src={imagePreview} alt={"unknown file"} />
+                    <img src={profileImagePreview} alt={"unknown file"} />
                   </div>
                   <div className="bg-slate-800 pt-3 relative text-center">
                     <h3 className="text-gray-200 font-medium">
@@ -202,15 +278,16 @@ export default function CreateCollection() {
                   </div>
                 </div>
               </div>
-            ) : (
-              <div className="sm:col-span-6 mt-6">
-                <label
-                  htmlFor="cover-photo"
-                  className="block text-lg font-medium text-gray-300"
-                >
-                  Profile Image
-                </label>
-                <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
+            )}
+            <div className="sm:col-span-6 mt-6">
+              <label
+                htmlFor="cover-photo"
+                className="block text-lg font-medium text-gray-300"
+              >
+                Profile Image
+              </label>
+              <div className="mt-1 flex justify-center max-w-[50%] px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
+                {!profileImagePreview ? (
                   <div className="space-y-1 text-center">
                     <svg
                       className="mx-auto h-12 w-12 text-gray-400"
@@ -226,30 +303,129 @@ export default function CreateCollection() {
                         strokeLinejoin="round"
                       />
                     </svg>
-                    <div className="flex text-lg text-gray-500">
+                    <div className="flex text-lg justify-center text-gray-500">
                       <label
-                        htmlFor="file-upload"
+                        htmlFor="profile-image-upload"
                         className="relative cursor-pointer rounded-md font-medium text-purple-600 hover:text-purple-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-purple-500"
                       >
                         <span>Upload a file</span>
                         <input
-                          id="file-upload"
-                          name="file-upload"
+                          id="profile-image-upload"
+                          name="profile-image-upload"
                           type="file"
-                          onChange={onImageChange}
+                          onChange={onProfileImageChange}
                           accept="image/png, image/gif, image/jpeg"
                           className="sr-only"
                         />
                       </label>
-                      <p className="pl-1">or drag and drop</p>
                     </div>
                     <p className="text-md text-gray-500">
                       PNG, JPG, GIF up to 20MB
                     </p>
                   </div>
-                </div>
+                ) : (
+                  <div className="rounded-lg overflow-hidden text-center max-h-96 max-w-xs">
+                    <img
+                      src={profileImagePreview}
+                      className="rounded-lg"
+                      alt={"unknown file"}
+                    />
+                    <label
+                      htmlFor="profile-image-upload"
+                      className="relative cursor-pointer rounded-md font-medium text-purple-600 hover:text-purple-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-purple-500"
+                    >
+                      <span>change</span>
+                      <input
+                        id="profile-image-upload"
+                        name="profile-image-upload"
+                        type="file"
+                        onChange={onProfileImageChange}
+                        accept="image/png, image/gif, image/jpeg"
+                        className="sr-only"
+                      />
+                    </label>
+                  </div>
+                )}
               </div>
-            )}
+            </div>
+
+            <div className="sm:col-span-6 mt-6">
+              <label
+                htmlFor="cover-photo"
+                className="block text-lg font-medium text-gray-300"
+              >
+                Banner Image
+              </label>
+              <div className="mt-1 flex justify-center max-h-[250px] px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
+                {!bannerImagePreview ? (
+                  <div className="space-y-1 text-center">
+                    <svg
+                      className="mx-auto h-12 w-12 text-gray-400"
+                      stroke="currentColor"
+                      fill="none"
+                      viewBox="0 0 48 48"
+                      aria-hidden="true"
+                    >
+                      <path
+                        d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
+                        strokeWidth={2}
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                    <div className="flex justify-center text-lg text-gray-500">
+                      <label
+                        htmlFor="banner-image-upload"
+                        className="relative cursor-pointer rounded-md font-medium text-purple-600 hover:text-purple-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-purple-500"
+                      >
+                        <span>Upload a file</span>
+                        <input
+                          id="banner-image-upload"
+                          name="banner-image-upload"
+                          type="file"
+                          onChange={onBannerImageChange}
+                          accept="image/png, image/jpeg"
+                          className="sr-only"
+                        />
+                      </label>
+                    </div>
+                    <p className="text-md text-gray-500">PNG, JPG max 600KB</p>
+                  </div>
+                ) : (
+                  <div className="relative max-h-80 w-full">
+                    <div className="inset-0 z-0 rounded-lg overflow-hidden max-h-52 max-w-lg">
+                      <img
+                        src={bannerImagePreview}
+                        className="object-cover h-40 w-full"
+                        alt={"unknown file"}
+                      />
+                    </div>
+                    <div className="absolute flex h-[100%] justify-evenly mb-2 items-end inset-0 z-10">
+                      <div
+                        onClick={() => setBannerImagePreview(null)}
+                        className="cursor-pointer rounded-md font-medium text-white hover:text-gray-300 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-purple-500"
+                      >
+                        Remove
+                      </div>
+                      <label
+                        htmlFor="banner-image-upload"
+                        className="cursor-pointer rounded-md font-medium text-white hover:text-gray-300 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-purple-500"
+                      >
+                        <span>Change</span>
+                        <input
+                          id="banner-image-upload"
+                          name="banner-image-upload"
+                          type="file"
+                          onChange={onBannerImageChange}
+                          accept="image/png, image/jpeg"
+                          className="sr-only"
+                        />
+                      </label>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
 
             <div className="mt-6 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
               <div className="sm:col-span-6">
@@ -286,10 +462,47 @@ export default function CreateCollection() {
                   {nameValidation}
                 </p>
                 <p className="mt-2 text-lg text-gray-500">
-                  Note: Must only contain letters A-Z, numbers, and hyphens.
+                  This name will be shown publicly.
+                </p>
+              </div>
+              <div className="sm:col-span-6">
+                <label
+                  htmlFor="url"
+                  className="block text-lg font-medium text-gray-300"
+                >
+                  Url
+                </label>
+                <div className="mt-1">
+                  <input
+                    type="text"
+                    name="url"
+                    id="url"
+                    maxLength={30}
+                    placeholder="Collection url"
+                    autoComplete="given-url"
+                    className="shadow-sm text-white caret-purple-200 bg-slate-800 focus:ring-purple-500 focus:border-purple-500 block w-full sm:text-lg border-gray-300 rounded-md"
+                    defaultValue={url}
+                    onChange={(c) => {
+                      verifyUrl(c.target.value);
+                    }}
+                  />
+                </div>
+                <p
+                  className={`mt-2 text-lg font-semibold ${
+                    urlValidation === "verifying..."
+                      ? "text-gray-400"
+                      : isUrlAvailable
+                      ? "text-purple-500"
+                      : "text-red-500"
+                  }`}
+                >
+                  {urlValidation}
                 </p>
                 <p className="mt-2 text-lg text-gray-500">
-                  This will be used as collection url also, make sure you have
+                  Note: Must only contain letters a-z, numbers, and hyphens.
+                </p>
+                <p className="mt-2 text-lg text-gray-500">
+                  This will be used as collection url, make sure you have
                   entered the correct name.
                 </p>
               </div>

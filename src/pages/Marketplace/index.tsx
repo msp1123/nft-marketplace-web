@@ -328,15 +328,15 @@ export default function Marketplace() {
       </main>
 
       {/* Filters & Tokens Desktop */}
-      <div className="py-4">
+      <div className="flex justify-center py-6">
         {/* Tokens grid */}
         <ul
           role="list"
-          className="gap-4 grid grid-cols-1 group px-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 3xl:grid-cols-7"
+          className="gap-6 grid grid-cols-1 group px-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4 3xl:grid-cols-6"
         >
           {allTokensState.tokens && allTokensState.tokens.length > 0 ? (
-            allTokensState.tokens.map((token: TokenModel) => (
-              <TokenCard token={token} />
+            allTokensState.tokens.map((token: TokenModel, index: number) => (
+              <TokenCard token={token} key={index}/>
             ))
           ) : (
             <div className="align-middle w-screen px-4 sm:px-6 lg:px-8">

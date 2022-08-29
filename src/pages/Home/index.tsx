@@ -5,7 +5,7 @@ import { ChevronRightIcon } from "@heroicons/react/solid";
 import Arts from "../../assets/Images/home/arts.jpeg";
 import Music from "../../assets/Images/home/music.jpeg";
 import Video from "../../assets/Images/home/video.jpeg";
-import Trending from "../../assets/Images/home/trending.jpeg";
+import Photography from "../../assets/Images/home/photography.jpeg";
 import Collectibles from "../../assets/Images/home/collectibles.jpeg";
 import PurpleNftBg from "../../assets/Images/home/nft-bg.png";
 import { IoWalletOutline } from "react-icons/io5";
@@ -22,9 +22,9 @@ const categories = [
     imageSrc: Collectibles,
   },
   {
-    name: "Trending",
+    name: "Photography",
     href: "#",
-    imageSrc: Trending,
+    imageSrc: Photography,
   },
   {
     name: "Arts",

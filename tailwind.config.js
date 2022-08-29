@@ -13,11 +13,20 @@ module.exports = {
       },
       screens: {
         '3xl': '2040px',
-      }
+      },
+      animation: {
+        shine: "shine 1s",
+      },
+      keyframes: {
+        shine: {
+          "100%": { left: "125%" },
+        },
+      },
     },
   },
   plugins: [
     require('@tailwindcss/forms'),
+    require('@tailwindcss/line-clamp'),
     require('@tailwindcss/aspect-ratio'),
     plugin(function ({ addVariant }) {
       addVariant('m-only', "@media screen and (max-width: theme('screens.sm'))"); // instead of hard-coded 640px use sm breakpoint value from config. Or anything

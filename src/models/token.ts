@@ -1,6 +1,8 @@
 export type TokenModel = {
     _id: string;
     active: boolean;
+    isLiked: boolean;
+    isSaved: boolean;
     collectionName: string;
     nftAddress: string;
     chainId: number;

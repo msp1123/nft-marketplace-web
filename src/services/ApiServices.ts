@@ -65,6 +65,18 @@ export async function VerifyCollectionName(name: string) {
     return resJson;
 }
 
+export async function VerifyCollectionUrl(url: string) {
+    let res = await fetch(`/v1/collection/verifyUrl?url=${url}`, {
+        method: 'GET'
+    })
+    try {
+        var resJson = await res.json();
+    } catch (error) {
+        return
+    }
+    return resJson;
+}
+
 export async function CreateNewCollection(body: Object) {
     let authToken = localStorage.getItem(CONFIG.authTokenStorageKey);
     
