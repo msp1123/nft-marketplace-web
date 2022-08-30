@@ -50,13 +50,13 @@ const Header = () => {
     } else {
       activate(injected);
     }
-    let address = localStorage.getItem(CONFIG.authLoggedInUser)
+    let address = localStorage.getItem(CONFIG.authLoggedInUser);
     setLoggedInUser(address!);
   };
 
   const login = async () => {
     await loginWithSignature(account!, window);
-    let address = localStorage.getItem(CONFIG.authLoggedInUser)
+    let address = localStorage.getItem(CONFIG.authLoggedInUser);
     setLoggedInUser(address!);
   };
 
@@ -109,46 +109,18 @@ const Header = () => {
   const navigations = [
     {
       name: "Home",
-      description: "Overview of the application.",
       href: "/",
       icon: HomeIcon,
     },
     {
       name: "Marketplace",
-      description: "Explore the Market Buy your first NFT.",
       href: "/marketplace",
       icon: ViewGridIcon,
     },
     {
       name: "Mint",
-      description: "Mint your own NFT here.",
       href: "/create-nft",
       icon: CursorClickIcon,
-    },
-  ];
-  const resources = [
-    {
-      name: "Create Collection",
-      description:
-        "Create your own collection to manage your NFTs categorised.",
-      href: "/create-collection",
-    },
-    {
-      name: "Help Center",
-      description:
-        "Get all of your questions answered in our forums or contact support.",
-      href: "#",
-    },
-    {
-      name: "Guides",
-      description:
-        "Learn how to maximize our platform to get the most out of it.",
-      href: "#",
-    },
-    {
-      name: "Security",
-      description: "Understand how we take your privacy seriously.",
-      href: "#",
     },
   ];
 
@@ -166,7 +138,12 @@ const Header = () => {
       />
       <Popover className="relative bg-gray-900">
         <div className="flex justify-between items-center px-4 py-6 sm:px-6 md:justify-start md:space-x-10">
-          <div className="flex content-center cursor-pointer text-center lg:w-0 lg:flex-1">
+          <div
+            onClick={() => {
+              navigate("/");
+            }}
+            className="flex content-center cursor-pointer text-center lg:w-0 lg:flex-1"
+          >
             <img
               className="inline-block pr-2 w-auto h-12 sm:h-16"
               src={NftLogo}
@@ -198,49 +175,6 @@ const Header = () => {
                 {n.name}
               </div>
             ))}
-
-            <Popover className="relative">
-              {({ open }) => (
-                <>
-                  <Popover.Button>
-                    <span className="text-base font-medium text-gray-400 hover:text-gray-200">
-                      More
-                    </span>
-                  </Popover.Button>
-
-                  <Transition
-                    as={Fragment}
-                    enter="transition ease-out duration-200"
-                    enterFrom="opacity-0 translate-y-1"
-                    enterTo="opacity-100 translate-y-0"
-                    leave="transition ease-in duration-150"
-                    leaveFrom="opacity-100 translate-y-0"
-                    leaveTo="opacity-0 translate-y-1"
-                  >
-                    <Popover.Panel className="absolute z-10 left-1/2 transform -translate-x-1/2 mt-3 px-2 w-screen max-w-xs sm:px-0">
-                      <div className="rounded-lg shadow-lg ring-1 ring-black ring-opacity-5 overflow-hidden">
-                        <div className="relative grid gap-6 bg-slate-800 px-5 py-6 sm:gap-8 sm:p-8">
-                          {resources.map((resource) => (
-                            <a
-                              key={resource.name}
-                              href={resource.href}
-                              className="-m-3 p-3 block rounded-md hover:bg-slate-700"
-                            >
-                              <p className="text-base font-medium text-gray-300">
-                                {resource.name}
-                              </p>
-                              <p className="mt-1 text-sm text-gray-500">
-                                {resource.description}
-                              </p>
-                            </a>
-                          ))}
-                        </div>
-                      </div>
-                    </Popover.Panel>
-                  </Transition>
-                </>
-              )}
-            </Popover>
           </Popover.Group>
           <div className="hidden md:flex items-center justify-end md:flex-1 lg:w-0">
             <IconButton icon={<BiSearchAlt size={26} />} onClick={() => {}} />

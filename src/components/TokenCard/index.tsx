@@ -46,7 +46,7 @@ export default function TokenCard({ token }: TokenProps, key: number) {
       <div className="relative w-full rounded-lg overflow-hidden">
         <img
           className="inset-0 bg-cover bg-center z-0 ease-in duration-300"
-          src={token.image}
+          src={token.previewImage}
           alt={token.name}
           onLoad={() => setImgLoading(false)}
         />

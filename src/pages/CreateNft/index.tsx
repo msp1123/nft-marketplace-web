@@ -16,13 +16,15 @@ import TokenMarketJson from "../../abi/TokenMarket.json";
 import { callWithEstimateGas } from "../../hooks/Web3/estimateGas";
 import { ethers } from "ethers";
 import { useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 
 export default function CreateNft() {
+  let navigate = useNavigate();
   const { account, active } = useWeb3React();
   const commonInfo = useSelector((state: any) => state?.commonInfo);
 
-  const [supply, setSupply] = useState(5);
-  const [royalty, setRoyalty] = useState(0);
+  const [supply, setSupply] = useState(1);
+  const [royalty, setRoyalty] = useState(10);
   const [chainId, setChainId] = useState(0);
   const [tokenId, setTokenId] = useState(0);
 
@@ -56,7 +58,7 @@ export default function CreateNft() {
     }
   };
 
-  const fetchSupportedNetworks =  useCallback(async () => {
+  const fetchSupportedNetworks = useCallback(async () => {
     let networks = await commonInfo.networks;
     if (networks && networks.length > 0) {
       setSupportedNetworks(networks);
@@ -82,8 +84,8 @@ export default function CreateNft() {
       if (!isCollectionSet) {
         setChainId(collectionsT[0].chainId);
         setNftAddress(collectionsT[0].address);
-        setCollection(collectionsT[0].name)
-      };
+        setCollection(collectionsT[0].name);
+      }
       setIsCollectionSet(true);
       getTokenId();
     }
@@ -141,8 +143,8 @@ export default function CreateNft() {
       ]);
     } catch (error) {
       setButtonDefaults();
-      return toast.error("Transaction failed!.")
-    };
+      return toast.error("Transaction failed!.");
+    }
     setTxHash(tx.hash);
     uploadImage(tx.hash);
     toast.promise(tx.wait(), {
@@ -187,7 +189,12 @@ export default function CreateNft() {
     setButtonLabel("Creating");
     let input = {
       name: name,
-      image: imageUrl,
+      attachments: [
+        {
+          fileType: "Image",
+          url: imageUrl,
+        },
+      ],
       txHash: txHash,
       tokenId: tokenId,
       description: description,
@@ -436,7 +443,7 @@ export default function CreateNft() {
                 </div>
               </div>
             </div>
-            <div className="pt-6 pb-4">
+            <div className="pt-6 pb-1">
               <label
                 htmlFor="collection"
                 className="block text-lg font-medium text-gray-300"
@@ -503,6 +510,19 @@ export default function CreateNft() {
                 </Listbox>
               </div>
             </div>
+            <label
+              htmlFor="file-upload"
+              className="relative text-end cursor-pointer rounded-md font-medium text-purple-600 hover:text-purple-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-purple-500"
+            >
+              <div
+                onClick={() => {
+                  navigate("/create-collection");
+                }}
+                className="cursor-pointer hover:underline"
+              >
+                Create Collection
+              </div>
+            </label>
           </div>
 
           <div className="pt-8">
@@ -606,7 +626,8 @@ export default function CreateNft() {
                 Transaction has been submitted.
               </p>
               <a
-                href={`${explorerUrl}/tx/${txHash}`} target="_blank"
+                href={`${explorerUrl}/tx/${txHash}`}
+                target="_blank"
                 className="cursor-pointer underline text-pink-600"
               >
                 check
