@@ -8,7 +8,7 @@ const publicPath = path.join(__dirname, '../..', 'build');
 const { createProxyMiddleware } = require('http-proxy-middleware');
 
 app.use(createProxyMiddleware('/v1', {
-    target: "http://localhost:3200",
+    target: "http://54.153.124.24:3200",
     changeOrigin: true
 }));
 
